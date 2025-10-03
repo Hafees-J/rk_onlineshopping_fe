@@ -1,4 +1,3 @@
-// src/pages/ShopItemPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -40,7 +39,7 @@ export default function ShopItemPage() {
 
   const [error, setError] = useState("");
 
-  // Fetch categories & shop items on mount
+  // ---------------- Fetch initial data ----------------
   useEffect(() => {
     fetchCategories();
     fetchShopItems();
@@ -48,7 +47,9 @@ export default function ShopItemPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axiosInstance.get("/products/categories/");
+      const res = await axiosInstance.get("/products/categories/", {
+        headers: { Authorization: `Bearer ${auth?.access}` },
+      });
       setCategories(res.data);
     } catch (err) {
       console.error("Failed to fetch categories", err);
@@ -59,7 +60,8 @@ export default function ShopItemPage() {
     if (!categoryId) return setSubcategories([]);
     try {
       const res = await axiosInstance.get(
-        `/products/subcategories-per-category/${categoryId}/`
+        `/products/subcategories-per-category/${categoryId}/`,
+        { headers: { Authorization: `Bearer ${auth?.access}` } }
       );
       setSubcategories(res.data);
     } catch (err) {
@@ -71,7 +73,8 @@ export default function ShopItemPage() {
     if (!subcategoryId) return setItems([]);
     try {
       const res = await axiosInstance.get(
-        `/products/items-per-subcategory/${subcategoryId}/`
+        `/products/items-per-subcategory/${subcategoryId}/`,
+        { headers: { Authorization: `Bearer ${auth?.access}` } }
       );
       setItems(res.data);
     } catch (err) {
@@ -83,7 +86,8 @@ export default function ShopItemPage() {
     if (!auth?.shop_id) return;
     try {
       const res = await axiosInstance.get(
-        `/products/shop-items/?shop=${auth.shop_id}`
+        `/products/shop-items/?shop=${auth.shop_id}`,
+        { headers: { Authorization: `Bearer ${auth?.access}` } }
       );
       setShopItems(res.data);
     } catch (err) {
@@ -91,6 +95,7 @@ export default function ShopItemPage() {
     }
   };
 
+  // ---------------- Handlers ----------------
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value;
     setSelectedCategory(categoryId);
@@ -109,7 +114,23 @@ export default function ShopItemPage() {
     fetchItems(subcategoryId);
   };
 
+  const resetForm = () => {
+    setSelectedCategory("");
+    setSelectedSubcategory("");
+    setSelectedItem("");
+    setPrice("");
+    setAvailableQuantity("");
+    setAvailableFrom("");
+    setAvailableTill("");
+    setIsAvailable(true);
+  };
+
   const handleSubmit = async () => {
+    if (!selectedItem || !price || !availableQuantity) {
+      setError("Please fill all required fields.");
+      return;
+    }
+
     if (!auth?.shop_id) {
       setError("Shop ID missing. Cannot add item.");
       return;
@@ -120,27 +141,17 @@ export default function ShopItemPage() {
       item: selectedItem,
       price,
       available_quantity: availableQuantity,
-      available_from: availableFrom,
-      available_till: availableTill,
+      available_from: availableFrom || null,
+      available_till: availableTill || null,
       is_available: isAvailable,
     };
-
-    console.log("Submitting payload:", payload); // Debug 400 errors
 
     try {
       await axiosInstance.post("/products/shop-items/", payload, {
         headers: { Authorization: `Bearer ${auth?.access}` },
       });
 
-      // Reset form
-      setSelectedCategory("");
-      setSelectedSubcategory("");
-      setSelectedItem("");
-      setPrice("");
-      setAvailableQuantity("");
-      setAvailableFrom("");
-      setAvailableTill("");
-      setIsAvailable(true);
+      resetForm();
       fetchShopItems();
       setError("");
     } catch (err) {
@@ -149,6 +160,7 @@ export default function ShopItemPage() {
     }
   };
 
+  // ---------------- Render ----------------
   return (
     <Box p={4}>
       <Typography variant="h4" mb={2}>
@@ -157,7 +169,7 @@ export default function ShopItemPage() {
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {JSON.stringify(error)}
+          {typeof error === "string" ? error : JSON.stringify(error)}
         </Alert>
       )}
 
@@ -234,7 +246,7 @@ export default function ShopItemPage() {
         <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>Status</InputLabel>
           <Select
-            value={isAvailable}
+            value={isAvailable.toString()}
             onChange={(e) => setIsAvailable(e.target.value === "true")}
           >
             <MenuItem value="true">Available</MenuItem>
@@ -260,18 +272,26 @@ export default function ShopItemPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {shopItems.map((shopItem) => (
-              <TableRow key={shopItem.id}>
-                <TableCell>{shopItem.item_name}</TableCell>
-                <TableCell>{shopItem.price}</TableCell>
-                <TableCell>{shopItem.available_quantity}</TableCell>
-                <TableCell>{shopItem.available_from || "-"}</TableCell>
-                <TableCell>{shopItem.available_till || "-"}</TableCell>
-                <TableCell>
-                  {shopItem.is_available ? "Available" : "Unavailable"}
+            {shopItems.length ? (
+              shopItems.map((shopItem) => (
+                <TableRow key={shopItem.id}>
+                  <TableCell>{shopItem.item_name}</TableCell>
+                  <TableCell>{shopItem.price}</TableCell>
+                  <TableCell>{shopItem.available_quantity}</TableCell>
+                  <TableCell>{shopItem.available_from || "-"}</TableCell>
+                  <TableCell>{shopItem.available_till || "-"}</TableCell>
+                  <TableCell>
+                    {shopItem.is_available ? "Available" : "Unavailable"}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  No shop items found.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>

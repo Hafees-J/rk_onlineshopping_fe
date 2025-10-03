@@ -8,7 +8,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // Allowed roles for admin/shopadmin features
-  const allowedRoles = ["admin", "shopadmin"];
+  const allowedRoles = ["superadmin", "shopadmin"];
 
   return (
     <Box textAlign="center" mt={10}>
@@ -19,8 +19,8 @@ export default function Dashboard() {
         Role: {auth?.role || "N/A"}
       </Typography>
 
-      {allowedRoles.includes(auth?.role) && (
-        <Stack spacing={2} direction="column" alignItems="center" mb={3}>
+      {allowedRoles.includes(auth?.role) ? (
+        <Stack spacing={2} direction="column" alignItems="center" sx={{ mb: 3 }}>
           <Button variant="contained" onClick={() => navigate("/categories")}>
             Categories
           </Button>
@@ -37,6 +37,10 @@ export default function Dashboard() {
             Shop Item Offers
           </Button>
         </Stack>
+      ) : (
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          You have limited access. Explore your dashboard features below.
+        </Typography>
       )}
 
       <Button variant="contained" color="error" onClick={logout}>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { TextField, Button, Box, Typography, Link } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { TextField, Button, Box, Typography } from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -10,15 +10,29 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
       await login(username, password);
       navigate("/dashboard");
     } catch (err) {
       console.error(err.response);
-      setError(err.response?.data?.detail || "Login failed");
+      const data = err.response?.data;
+      let message = "Login failed";
+      if (data) {
+        if (data.detail) message = data.detail;
+        else if (typeof data === "object") {
+          message = Object.values(data).flat().join(" ");
+        }
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,12 +62,20 @@ export default function Login() {
             {error}
           </Typography>
         )}
-        <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-          Login
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </Button>
       </form>
       <Box mt={2}>
-        <Link href="/register">Don't have an account? Register</Link>
+        <Typography variant="body2">
+          Don't have an account? <Link to="/register">Register</Link>
+        </Typography>
       </Box>
     </Box>
   );

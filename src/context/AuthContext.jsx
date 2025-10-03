@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axiosInstance from "../api/axios";
 
@@ -11,10 +10,9 @@ export function AuthProvider({ children }) {
     const role = localStorage.getItem("role");
     const username = localStorage.getItem("username");
     const shop_id = localStorage.getItem("shop_id");
-    const branch_id = localStorage.getItem("branch_id");
 
     return access && refresh
-      ? { access, refresh, role, username, shop_id, branch_id }
+      ? { access, refresh, role, username, shop_id }
       : null;
   });
 
@@ -26,10 +24,7 @@ export function AuthProvider({ children }) {
         try {
           const res = await axiosInstance.post("users/refresh/", { refresh });
           localStorage.setItem("access_token", res.data.access);
-          setAuth((prev) => ({
-            ...prev,
-            access: res.data.access,
-          }));
+          setAuth((prev) => ({ ...prev, access: res.data.access }));
         } catch (err) {
           console.error("Token refresh failed", err);
           logout();
@@ -40,29 +35,22 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
-  // 🔹 Login function
   const login = async (username, password) => {
     try {
       const res = await axiosInstance.post("users/login/", { username, password });
       const { access, refresh, role, username: userName } = res.data;
 
       let shop_id = null;
-      let branch_id = null;
 
-      // 🔹 Fetch shop & branch if shopadmin
       if (role === "shopadmin") {
         try {
-          const branchRes = await axiosInstance.get("shops/my-branch/", {
+          const shopRes = await axiosInstance.get("shops/my-shop/", {
             headers: { Authorization: `Bearer ${access}` },
           });
-
-          shop_id = branchRes.data.shop_id;
-          branch_id = branchRes.data.branch_id;
-
+          shop_id = shopRes.data?.shop_id || null;
           localStorage.setItem("shop_id", shop_id);
-          localStorage.setItem("branch_id", branch_id);
         } catch (err) {
-          console.error("Failed to fetch shop/branch info", err);
+          console.error("Failed to fetch shop info", err);
         }
       }
 
@@ -71,7 +59,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem("role", role);
       localStorage.setItem("username", userName);
 
-      setAuth({ access, refresh, role, username: userName, shop_id, branch_id });
+      setAuth({ access, refresh, role, username: userName, shop_id });
     } catch (err) {
       console.error("Login failed", err);
       throw err;
@@ -84,7 +72,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("role");
     localStorage.removeItem("username");
     localStorage.removeItem("shop_id");
-    localStorage.removeItem("branch_id");
     setAuth(null);
     window.location.href = "/login";
   };
