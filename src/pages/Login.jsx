@@ -12,29 +12,39 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      await login(username, password);
+  try {
+    await login(username, password);
+
+    // Redirect based on role
+    const role = localStorage.getItem("role");
+    if (role === "customer") {
+      navigate("/customer-dashboard");
+    } else if (role === "shopadmin" || role === "superadmin") {
       navigate("/dashboard");
-    } catch (err) {
-      console.error(err.response);
-      const data = err.response?.data;
-      let message = "Login failed";
-      if (data) {
-        if (data.detail) message = data.detail;
-        else if (typeof data === "object") {
-          message = Object.values(data).flat().join(" ");
-        }
-      }
-      setError(message);
-    } finally {
-      setLoading(false);
+    } else {
+      navigate("/login"); // fallback
     }
-  };
+  } catch (err) {
+    console.error(err.response);
+    const data = err.response?.data;
+    let message = "Login failed";
+    if (data) {
+      if (data.detail) message = data.detail;
+      else if (typeof data === "object") {
+        message = Object.values(data).flat().join(" ");
+      }
+    }
+    setError(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Box maxWidth={400} mx="auto" mt={10}>

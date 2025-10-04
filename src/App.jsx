@@ -11,6 +11,7 @@ import SubCategoriesPage from "./pages/admin/SubCategoriesPage";
 import ItemsPage from "./pages/admin/ItemsPage";
 import ShopItemPage from "./pages/admin/ShopItemPage";
 import ShopItemOfferPage from "./pages/admin/ShopItemOfferPage";
+import CustomerDashboard from "./pages/CustomerDashboard";
 
 // Private Route Component
 function PrivateRoute({ children }) {
@@ -75,6 +76,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <ShopItemOfferPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/customer-dashboard"
+          element={
+            <PrivateRoute>
+              <CustomerDashboard />
             </PrivateRoute>
           }
         />
