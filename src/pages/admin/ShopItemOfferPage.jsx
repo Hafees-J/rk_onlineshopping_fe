@@ -38,18 +38,18 @@ export default function ShopItemOfferPage() {
 
   const [form, setForm] = useState({
     shop_item: "",
-    offer_price: "",
+    offer_pct: "",
     offer_starting_datetime: "",
     offer_ending_datetime: "",
+    active: false,
   });
 
-  // ✅ Role-based access
   const allowedRoles = ["shopadmin", "superadmin"];
   const hasPermission = auth && allowedRoles.includes(auth.role);
 
   useEffect(() => {
     if (!hasPermission) {
-      navigate("/dashboard"); // redirect unauthorized
+      navigate("/dashboard");
     } else {
       fetchShopItems();
       fetchOffers();
@@ -58,7 +58,7 @@ export default function ShopItemOfferPage() {
 
   const fetchShopItems = async () => {
     try {
-      const res = await axiosInstance.get("products/shop-items/");
+      const res = await axiosInstance.get("/products/shop-items/");
       setShopItems(res.data);
     } catch (err) {
       console.error("Failed to fetch shop items", err);
@@ -67,7 +67,7 @@ export default function ShopItemOfferPage() {
 
   const fetchOffers = async () => {
     try {
-      const res = await axiosInstance.get("products/shop-item-offers/");
+      const res = await axiosInstance.get("/products/shop-item-offers/");
       setOffers(res.data);
     } catch (err) {
       console.error("Failed to fetch offers", err);
@@ -83,27 +83,29 @@ export default function ShopItemOfferPage() {
     try {
       const payload = {
         shop_item: form.shop_item,
-        offer_price: form.offer_price,
+        offer_pct: form.offer_pct,
         offer_starting_datetime: form.offer_starting_datetime,
         offer_ending_datetime: form.offer_ending_datetime,
+        active: form.active,
       };
 
       if (editing) {
         await axiosInstance.put(
-          `products/shop-item-offers/${editing.id}/`,
+          `/products/shop-item-offers/${editing.id}/`,
           payload
         );
       } else {
-        await axiosInstance.post("products/shop-item-offers/", payload);
+        await axiosInstance.post("/products/shop-item-offers/", payload);
       }
 
       setOpen(false);
       setEditing(null);
       setForm({
         shop_item: "",
-        offer_price: "",
+        offer_pct: "",
         offer_starting_datetime: "",
         offer_ending_datetime: "",
+        active: false,
       });
       fetchOffers();
     } catch (err) {
@@ -114,7 +116,7 @@ export default function ShopItemOfferPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this offer?")) return;
     try {
-      await axiosInstance.delete(`products/shop-item-offers/${id}/`);
+      await axiosInstance.delete(`/products/shop-item-offers/${id}/`);
       fetchOffers();
     } catch (err) {
       console.error("Failed to delete offer", err);
@@ -140,9 +142,10 @@ export default function ShopItemOfferPage() {
             setEditing(null);
             setForm({
               shop_item: "",
-              offer_price: "",
+              offer_pct: "",
               offer_starting_datetime: "",
               offer_ending_datetime: "",
+              active: false,
             });
             setOpen(true);
           }}
@@ -157,44 +160,49 @@ export default function ShopItemOfferPage() {
           <TableHead>
             <TableRow>
               <TableCell>Shop Item</TableCell>
-              <TableCell>Offer Price</TableCell>
+              <TableCell>Offer %</TableCell>
               <TableCell>Start</TableCell>
               <TableCell>End</TableCell>
+              <TableCell>Active</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {offers.map((offer) => (
-              <TableRow key={offer.id}>
-                <TableCell>{offer.shop_item_name || offer.shop_item}</TableCell>
-                <TableCell>{offer.offer_price}</TableCell>
-                <TableCell>{offer.offer_starting_datetime}</TableCell>
-                <TableCell>{offer.offer_ending_datetime}</TableCell>
-                <TableCell>
-                  <IconButton
-                    color="primary"
-                    onClick={() => {
-                      setEditing(offer);
-                      setForm({
-                        shop_item: offer.shop_item,
-                        offer_price: offer.offer_price,
-                        offer_starting_datetime: offer.offer_starting_datetime,
-                        offer_ending_datetime: offer.offer_ending_datetime,
-                      });
-                      setOpen(true);
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(offer.id)}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+            {offers.map((offer) => {
+              const shopItem = shopItems.find((si) => si.id === offer.shop_item);
+              const itemName = shopItem ? shopItem.item_name || shopItem.item?.name : offer.shop_item;
+
+              return (
+                <TableRow key={offer.id}>
+                  <TableCell>{itemName}</TableCell>
+                  <TableCell>{offer.offer_pct}</TableCell>
+                  <TableCell>{offer.offer_starting_datetime}</TableCell>
+                  <TableCell>{offer.offer_ending_datetime}</TableCell>
+                  <TableCell>{offer.active ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => {
+                        setEditing(offer);
+                        setForm({
+                          shop_item: offer.shop_item,
+                          offer_pct: offer.offer_pct,
+                          offer_starting_datetime: offer.offer_starting_datetime,
+                          offer_ending_datetime: offer.offer_ending_datetime,
+                          active: offer.active,
+                        });
+                        setOpen(true);
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => handleDelete(offer.id)}>
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -209,11 +217,11 @@ export default function ShopItemOfferPage() {
               name="shop_item"
               value={form.shop_item}
               onChange={handleChange}
-              disabled={!!editing} // cannot change shop item when editing
+              disabled={!!editing}
             >
               {shopItems.map((si) => (
                 <MenuItem key={si.id} value={si.id}>
-                  {si.item_name || si.item}
+                  {si.item_name || si.item?.name}
                 </MenuItem>
               ))}
             </Select>
@@ -221,11 +229,11 @@ export default function ShopItemOfferPage() {
 
           <TextField
             margin="normal"
-            label="Offer Price"
-            name="offer_price"
+            label="Offer %"
+            name="offer_pct"
             type="number"
             fullWidth
-            value={form.offer_price}
+            value={form.offer_pct}
             onChange={handleChange}
           />
 

@@ -31,7 +31,7 @@ export default function ShopItemPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
 
-  const [price, setPrice] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
   const [availableQuantity, setAvailableQuantity] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
   const [availableTill, setAvailableTill] = useState("");
@@ -39,7 +39,6 @@ export default function ShopItemPage() {
 
   const [error, setError] = useState("");
 
-  // ---------------- Fetch initial data ----------------
   useEffect(() => {
     fetchCategories();
     fetchShopItems();
@@ -95,7 +94,6 @@ export default function ShopItemPage() {
     }
   };
 
-  // ---------------- Handlers ----------------
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value;
     setSelectedCategory(categoryId);
@@ -118,7 +116,7 @@ export default function ShopItemPage() {
     setSelectedCategory("");
     setSelectedSubcategory("");
     setSelectedItem("");
-    setPrice("");
+    setTotalAmount("");
     setAvailableQuantity("");
     setAvailableFrom("");
     setAvailableTill("");
@@ -126,7 +124,7 @@ export default function ShopItemPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedItem || !price || !availableQuantity) {
+    if (!selectedItem || !totalAmount || !availableQuantity) {
       setError("Please fill all required fields.");
       return;
     }
@@ -139,7 +137,7 @@ export default function ShopItemPage() {
     const payload = {
       shop: auth.shop_id,
       item: selectedItem,
-      price,
+      total_amount: totalAmount,
       available_quantity: availableQuantity,
       available_from: availableFrom || null,
       available_till: availableTill || null,
@@ -160,7 +158,6 @@ export default function ShopItemPage() {
     }
   };
 
-  // ---------------- Render ----------------
   return (
     <Box p={4}>
       <Typography variant="h4" mb={2}>
@@ -173,6 +170,7 @@ export default function ShopItemPage() {
         </Alert>
       )}
 
+      {/* Form */}
       <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
         <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>Category</InputLabel>
@@ -216,26 +214,23 @@ export default function ShopItemPage() {
         </FormControl>
 
         <TextField
-          label="Price"
+          label="Total Amount"
           type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          value={totalAmount}
+          onChange={(e) => setTotalAmount(e.target.value)}
         />
-
         <TextField
           label="Available Quantity"
           type="number"
           value={availableQuantity}
           onChange={(e) => setAvailableQuantity(e.target.value)}
         />
-
         <TextField
           label="Available From"
           type="time"
           value={availableFrom}
           onChange={(e) => setAvailableFrom(e.target.value)}
         />
-
         <TextField
           label="Available Till"
           type="time"
@@ -259,12 +254,14 @@ export default function ShopItemPage() {
         </Button>
       </Box>
 
+      {/* Shop Items Table */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Item</TableCell>
-              <TableCell>Price</TableCell>
+              <TableCell>Total Amount</TableCell>
+              <TableCell>Offer Price</TableCell>
               <TableCell>Quantity</TableCell>
               <TableCell>Available From</TableCell>
               <TableCell>Available Till</TableCell>
@@ -275,8 +272,13 @@ export default function ShopItemPage() {
             {shopItems.length ? (
               shopItems.map((shopItem) => (
                 <TableRow key={shopItem.id}>
-                  <TableCell>{shopItem.item_name}</TableCell>
-                  <TableCell>{shopItem.price}</TableCell>
+                  <TableCell>
+                    {shopItem.item_name || shopItem.item?.name}
+                  </TableCell>
+                  <TableCell>{shopItem.total_amount}</TableCell>
+                  <TableCell>
+                    {shopItem.discount_amount || "-"}
+                  </TableCell>
                   <TableCell>{shopItem.available_quantity}</TableCell>
                   <TableCell>{shopItem.available_from || "-"}</TableCell>
                   <TableCell>{shopItem.available_till || "-"}</TableCell>
@@ -287,7 +289,7 @@ export default function ShopItemPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   No shop items found.
                 </TableCell>
               </TableRow>

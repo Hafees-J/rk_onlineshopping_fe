@@ -199,21 +199,21 @@ export default function CustomerDashboard() {
                 <Typography variant="h6">{item.item_name}</Typography>
 
                 {/* Price with Offer */}
-                {item.offer_price ? (
+                {item.offer_pct ? (
                   <>
                     <Typography
                       variant="body2"
                       color="text.secondary"
                       sx={{ textDecoration: "line-through" }}
                     >
-                      ₹{item.price}
+                      ₹{item.total_amount}
                     </Typography>
                     <Typography variant="body1" color="error">
-                      ₹{item.offer_price}
+                      ₹{item.discount_amount}
                     </Typography>
                   </>
                 ) : (
-                  <Typography variant="body1">₹{item.price}</Typography>
+                  <Typography variant="body1">₹{item.total_amount}</Typography>
                 )}
 
                 <Typography variant="body2" color="text.secondary">
