@@ -3,7 +3,7 @@ import { Typography, Button, Box, Stack } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export default function Dashboard() {
+export default function ShopAdminDashboard() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
 

@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 // Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/ShopAdminDashboard";
+import ShopAdminDashboard from "./pages/ShopAdminDashboard";
 import CategoriesPage from "./pages/admin/CategoriesPage";
 import SubCategoriesPage from "./pages/admin/SubCategoriesPage";
 import ItemsPage from "./pages/admin/ItemsPage";
