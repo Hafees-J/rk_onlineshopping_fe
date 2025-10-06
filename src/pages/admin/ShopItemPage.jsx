@@ -16,7 +16,9 @@ import {
   Paper,
   TableContainer,
   Alert,
+  IconButton,
 } from "@mui/material";
+import { Edit, Delete } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 
@@ -30,7 +32,6 @@ export default function ShopItemPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
-
   const [totalAmount, setTotalAmount] = useState("");
   const [availableQuantity, setAvailableQuantity] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
@@ -38,6 +39,7 @@ export default function ShopItemPage() {
   const [isAvailable, setIsAvailable] = useState(true);
 
   const [error, setError] = useState("");
+  const [editingItemId, setEditingItemId] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -88,9 +90,10 @@ export default function ShopItemPage() {
         `/products/shop-items/?shop=${auth.shop_id}`,
         { headers: { Authorization: `Bearer ${auth?.access}` } }
       );
-      setShopItems(res.data);
+      setShopItems(res.data || []);
     } catch (err) {
       console.error("Failed to fetch shop items", err);
+      setShopItems([]);
     }
   };
 
@@ -121,6 +124,7 @@ export default function ShopItemPage() {
     setAvailableFrom("");
     setAvailableTill("");
     setIsAvailable(true);
+    setEditingItemId(null);
   };
 
   const handleSubmit = async () => {
@@ -130,7 +134,7 @@ export default function ShopItemPage() {
     }
 
     if (!auth?.shop_id) {
-      setError("Shop ID missing. Cannot add item.");
+      setError("Shop ID missing. Cannot save item.");
       return;
     }
 
@@ -145,9 +149,17 @@ export default function ShopItemPage() {
     };
 
     try {
-      await axiosInstance.post("/products/shop-items/", payload, {
-        headers: { Authorization: `Bearer ${auth?.access}` },
-      });
+      if (editingItemId) {
+        // Update existing
+        await axiosInstance.put(`/products/shop-items/${editingItemId}/`, payload, {
+          headers: { Authorization: `Bearer ${auth?.access}` },
+        });
+      } else {
+        // Create new
+        await axiosInstance.post("/products/shop-items/", payload, {
+          headers: { Authorization: `Bearer ${auth?.access}` },
+        });
+      }
 
       resetForm();
       fetchShopItems();
@@ -155,6 +167,29 @@ export default function ShopItemPage() {
     } catch (err) {
       console.error("Failed to save shop item", err.response?.data || err);
       setError(err.response?.data || "Failed to save shop item");
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItemId(item.id);
+    setSelectedItem(item.item?.id || item.item);
+    setTotalAmount(item.total_amount);
+    setAvailableQuantity(item.available_quantity);
+    setAvailableFrom(item.available_from || "");
+    setAvailableTill(item.available_till || "");
+    setIsAvailable(item.is_available);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    try {
+      await axiosInstance.delete(`/products/shop-items/${id}/`, {
+        headers: { Authorization: `Bearer ${auth?.access}` },
+      });
+      fetchShopItems();
+    } catch (err) {
+      console.error("Failed to delete shop item", err);
+      alert("Failed to delete item");
     }
   };
 
@@ -171,8 +206,9 @@ export default function ShopItemPage() {
       )}
 
       {/* Form */}
-      <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
-        <FormControl sx={{ minWidth: 200 }}>
+      <Box display="flex" gap={2} flexWrap="wrap" mb={3}>
+        {/* Category */}
+        <FormControl sx={{ minWidth: 200 }} disabled={!!editingItemId}>
           <InputLabel>Category</InputLabel>
           <Select value={selectedCategory} onChange={handleCategoryChange}>
             {categories.map((cat) => (
@@ -183,12 +219,13 @@ export default function ShopItemPage() {
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 200 }}>
+        {/* Subcategory */}
+        <FormControl sx={{ minWidth: 200 }} disabled={!!editingItemId}>
           <InputLabel>Subcategory</InputLabel>
           <Select
             value={selectedSubcategory}
             onChange={handleSubcategoryChange}
-            disabled={!subcategories.length}
+            disabled={!subcategories.length || !!editingItemId}
           >
             {subcategories.map((sub) => (
               <MenuItem key={sub.id} value={sub.id}>
@@ -198,12 +235,13 @@ export default function ShopItemPage() {
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 200 }}>
+        {/* Item */}
+        <FormControl sx={{ minWidth: 200 }} disabled={!!editingItemId}>
           <InputLabel>Item</InputLabel>
           <Select
             value={selectedItem}
             onChange={(e) => setSelectedItem(e.target.value)}
-            disabled={!items.length}
+            disabled={!items.length || !!editingItemId}
           >
             {items.map((it) => (
               <MenuItem key={it.id} value={it.id}>
@@ -213,6 +251,7 @@ export default function ShopItemPage() {
           </Select>
         </FormControl>
 
+        {/* Editable fields */}
         <TextField
           label="Total Amount"
           type="number"
@@ -249,9 +288,15 @@ export default function ShopItemPage() {
           </Select>
         </FormControl>
 
-        <Button variant="contained" onClick={handleSubmit}>
-          Add / Update
+        <Button variant="contained" color="primary" onClick={handleSubmit}>
+          {editingItemId ? "Update Item" : "Add Item"}
         </Button>
+
+        {editingItemId && (
+          <Button variant="outlined" color="secondary" onClick={resetForm}>
+            Cancel Edit
+          </Button>
+        )}
       </Box>
 
       {/* Shop Items Table */}
@@ -266,30 +311,38 @@ export default function ShopItemPage() {
               <TableCell>Available From</TableCell>
               <TableCell>Available Till</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {shopItems.length ? (
+            {Array.isArray(shopItems) && shopItems.length ? (
               shopItems.map((shopItem) => (
                 <TableRow key={shopItem.id}>
-                  <TableCell>
-                    {shopItem.item_name || shopItem.item?.name}
-                  </TableCell>
+                  <TableCell>{shopItem.item_name || shopItem.item?.name}</TableCell>
                   <TableCell>{shopItem.total_amount}</TableCell>
-                  <TableCell>
-                    {shopItem.discount_amount || "-"}
-                  </TableCell>
+                  <TableCell>{shopItem.discount_amount || "-"}</TableCell>
                   <TableCell>{shopItem.available_quantity}</TableCell>
                   <TableCell>{shopItem.available_from || "-"}</TableCell>
                   <TableCell>{shopItem.available_till || "-"}</TableCell>
                   <TableCell>
                     {shopItem.is_available ? "Available" : "Unavailable"}
                   </TableCell>
+                  <TableCell align="center">
+                    <IconButton color="primary" onClick={() => handleEdit(shopItem)}>
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(shopItem.id)}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   No shop items found.
                 </TableCell>
               </TableRow>

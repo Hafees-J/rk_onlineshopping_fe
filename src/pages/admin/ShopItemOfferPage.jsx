@@ -21,6 +21,8 @@ import {
   TableRow,
   Paper,
   Alert,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
@@ -75,8 +77,11 @@ export default function ShopItemOfferPage() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async () => {
@@ -86,7 +91,7 @@ export default function ShopItemOfferPage() {
         offer_pct: form.offer_pct,
         offer_starting_datetime: form.offer_starting_datetime,
         offer_ending_datetime: form.offer_ending_datetime,
-        active: form.active,
+        active: form.active, // 👈 boolean flag
       };
 
       if (editing) {
@@ -126,7 +131,9 @@ export default function ShopItemOfferPage() {
   if (!hasPermission) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">You do not have permission to access this page.</Alert>
+        <Alert severity="error">
+          You do not have permission to access this page.
+        </Alert>
       </Box>
     );
   }
@@ -170,7 +177,8 @@ export default function ShopItemOfferPage() {
           <TableBody>
             {offers.map((offer) => {
               const shopItem = shopItems.find((si) => si.id === offer.shop_item);
-              const itemName = shopItem ? shopItem.item_name || shopItem.item?.name : offer.shop_item;
+              const itemName =
+                shopItem?.item_name || shopItem?.item?.name || offer.shop_item;
 
               return (
                 <TableRow key={offer.id}>
@@ -187,7 +195,8 @@ export default function ShopItemOfferPage() {
                         setForm({
                           shop_item: offer.shop_item,
                           offer_pct: offer.offer_pct,
-                          offer_starting_datetime: offer.offer_starting_datetime,
+                          offer_starting_datetime:
+                            offer.offer_starting_datetime,
                           offer_ending_datetime: offer.offer_ending_datetime,
                           active: offer.active,
                         });
@@ -196,7 +205,10 @@ export default function ShopItemOfferPage() {
                     >
                       <Edit />
                     </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(offer.id)}>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(offer.id)}
+                    >
                       <Delete />
                     </IconButton>
                   </TableCell>
@@ -258,7 +270,22 @@ export default function ShopItemOfferPage() {
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
           />
+
+          {/* ✅ New Switch for Active */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.active}
+                onChange={handleChange}
+                name="active"
+                color="primary"
+              />
+            }
+            label={form.active ? "Active Offer" : "Inactive Offer"}
+            sx={{ mt: 2 }}
+          />
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleSubmit}>
