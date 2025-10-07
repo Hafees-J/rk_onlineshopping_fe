@@ -59,11 +59,14 @@ export default function CustomerDashboard() {
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (!auth?.access) return;
+      console.log("Fetching subcategories...");
       setLoadingSubcategories(true);
       try {
         const res = await axiosInstance.get("/products/subcategories/available/", {
           headers: { Authorization: `Bearer ${auth.access}` },
         });
+
+        console.log("Subcategories API response:", res.data);
 
         const uniqueSubs = [];
         const seen = new Set();
@@ -75,8 +78,9 @@ export default function CustomerDashboard() {
         });
 
         setSubcategories(uniqueSubs);
+        console.log("Unique subcategories set:", uniqueSubs);
       } catch (err) {
-        console.error("Failed to fetch subcategories", err);
+        console.error("Failed to fetch subcategories:", err);
         setError("Failed to load subcategories");
       } finally {
         setLoadingSubcategories(false);
@@ -88,6 +92,7 @@ export default function CustomerDashboard() {
 
   // Fetch shops by subcategory
   const handleSubcategoryClick = async (subcategoryId) => {
+    console.log("Subcategory clicked:", subcategoryId);
     setSelectedSubcategory(subcategoryId);
     setShops([]);
     setSelectedShop(null);
@@ -100,9 +105,10 @@ export default function CustomerDashboard() {
         `/products/shops/by-subcategory/${subcategoryId}/`,
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
+      console.log("Shops API response:", res.data);
       setShops(res.data);
     } catch (err) {
-      console.error("Failed to fetch shops", err);
+      console.error("Failed to fetch shops:", err);
       setError("Failed to load shops for this subcategory");
     } finally {
       setLoadingShops(false);
@@ -111,6 +117,7 @@ export default function CustomerDashboard() {
 
   // Fetch shop items
   const handleShopClick = async (shopId) => {
+    console.log("Shop clicked:", shopId);
     setSelectedShop(shopId);
     setShopItems([]);
     setLoadingItems(true);
@@ -120,9 +127,10 @@ export default function CustomerDashboard() {
       const res = await axiosInstance.get(`/products/shops/${shopId}/items/`, {
         headers: { Authorization: `Bearer ${auth.access}` },
       });
+      console.log("Shop items API response:", res.data);
       setShopItems(res.data);
     } catch (err) {
-      console.error("Failed to fetch shop items", err);
+      console.error("Failed to fetch shop items:", err);
       setError("Failed to load shop items");
     } finally {
       setLoadingItems(false);
@@ -131,6 +139,7 @@ export default function CustomerDashboard() {
 
   // Add to cart with 409 handling
   const handleAddToCart = async (item) => {
+    console.log("Attempting to add to cart:", item);
     if (addingToCart[item.id]) return;
 
     setAddingToCart((prev) => ({ ...prev, [item.id]: true }));
@@ -141,6 +150,8 @@ export default function CustomerDashboard() {
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
 
+      console.log("Add to cart API response:", res.data);
+
       setSnackbar({
         open: true,
         message: res.data.message || `${item.item_name} added to cart!`,
@@ -149,6 +160,7 @@ export default function CustomerDashboard() {
     } catch (err) {
       // If 409 Conflict (different shop), show dialog
       if (err.response?.status === 409) {
+        console.warn("409 Conflict - cart has items from another shop:", err.response.data);
         setConfirmDialog({
           open: true,
           message:
@@ -157,7 +169,7 @@ export default function CustomerDashboard() {
           item,
         });
       } else {
-        console.error("Failed to add to cart", err);
+        console.error("Failed to add to cart:", err);
         const message =
           err.response?.data?.detail ||
           err.response?.data?.message ||
@@ -171,6 +183,7 @@ export default function CustomerDashboard() {
 
   const handleConfirmReset = async (confirm) => {
     const item = confirmDialog.item;
+    console.log("Cart reset confirmation:", confirm, "for item:", item);
     setConfirmDialog({ open: false, message: "", item: null });
 
     if (!confirm || !item) {
@@ -188,6 +201,7 @@ export default function CustomerDashboard() {
         { shop_item: item.id, quantity: 1, reset: true },
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
+      console.log("Cart reset API response:", resetRes.data);
 
       setSnackbar({
         open: true,
@@ -195,7 +209,7 @@ export default function CustomerDashboard() {
         severity: "success",
       });
     } catch (err) {
-      console.error("Failed to reset and add item", err);
+      console.error("Failed to reset and add item:", err);
       setSnackbar({
         open: true,
         message: "Failed to reset cart",

@@ -30,7 +30,7 @@ export default function CheckoutPage() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch cart
+  // Fetch cart items
   useEffect(() => {
     const fetchCart = async () => {
       setLoadingCart(true);
@@ -62,7 +62,6 @@ export default function CheckoutPage() {
         // Auto-select default address if exists
         const defaultAddr = res.data.find((addr) => addr.is_default);
         if (defaultAddr) {
-          setSelectedAddress(defaultAddr.id);
           handleAddressSelect(defaultAddr.id, res.data);
         }
       } catch (err) {
@@ -73,10 +72,9 @@ export default function CheckoutPage() {
       }
     };
     fetchAddresses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth]);
 
-  // Handle address selection
+  // Handle address selection and delivery calculation
   const handleAddressSelect = async (addressId, addrList = addresses) => {
     const address = addrList.find((a) => a.id === addressId);
     if (!address || cartItems.length === 0) return;
@@ -87,14 +85,21 @@ export default function CheckoutPage() {
     setError("");
 
     try {
-      const shopLat = cartItems[0]?.shop_item?.shop?.lat;
-      const shopLng = cartItems[0]?.shop_item?.shop?.lng;
-      const totalOrderAmount = cartItems.reduce(
+      const firstItem = cartItems[0];
+
+      const shopLat = firstItem.shop_lat;
+      const shopLng = firstItem.shop_lng;
+      const shopId = firstItem.shop_id;
+
+      if (!shopLat || !shopLng || !shopId) {
+        throw new Error("Shop information missing from cart items");
+      }
+
+      const totalAmount = cartItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
 
-      // Use the correct field names from your model
       const res = await axiosInstance.post(
         "/orders/calculate-delivery-distance/",
         {
@@ -102,15 +107,15 @@ export default function CheckoutPage() {
           user_lng: address.longitude,
           shop_lat: shopLat,
           shop_lng: shopLng,
-          shop_id: cartItems[0]?.shop_item?.shop?.id,
-          total_order_amount: totalOrderAmount,
+          shop_id: shopId,
+          total_order_amount: totalAmount,
         },
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
 
       setDeliveryInfo(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error calculating delivery:", err);
       setError("Failed to calculate delivery details");
     } finally {
       setLoadingDelivery(false);
@@ -123,6 +128,7 @@ export default function CheckoutPage() {
       setError("Please select a delivery address");
       return;
     }
+
     if (deliveryInfo && !deliveryInfo.delivery_available) {
       setError("Delivery not available for this address");
       return;
@@ -130,6 +136,7 @@ export default function CheckoutPage() {
 
     setPlacingOrder(true);
     setError("");
+
     try {
       const res = await axiosInstance.post(
         "/orders/cart/checkout/",
@@ -138,8 +145,8 @@ export default function CheckoutPage() {
       );
       navigate(`/order/${res.data.order_id}`);
     } catch (err) {
-      console.error(err);
-      setError("Failed to place order");
+      console.error("Error placing order:", err.response?.data || err);
+      setError(err.response?.data?.detail || "Failed to place order");
     } finally {
       setPlacingOrder(false);
     }
@@ -154,11 +161,15 @@ export default function CheckoutPage() {
 
   return (
     <Box p={4}>
-      <Typography variant="h4" mb={3}>
+      <Typography variant="h4" mb={3} textAlign="center">
         Checkout
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       {/* Cart Items */}
       <Typography variant="h6" mb={2}>
@@ -193,16 +204,12 @@ export default function CheckoutPage() {
       {loadingAddresses ? (
         <CircularProgress />
       ) : addresses.length === 0 ? (
-        <Typography>
-          No addresses found. Please add one in your profile.
-        </Typography>
+        <Typography>No addresses found. Add one in your profile.</Typography>
       ) : (
         <FormControl component="fieldset">
           <RadioGroup
             value={selectedAddress}
-            onChange={(e) =>
-              handleAddressSelect(Number(e.target.value))
-            }
+            onChange={(e) => handleAddressSelect(Number(e.target.value))}
           >
             {addresses.map((addr) => (
               <FormControlLabel
@@ -223,9 +230,7 @@ export default function CheckoutPage() {
         <Box mt={2} p={2} border="1px solid #ccc" borderRadius={2}>
           <Typography>Distance: {deliveryInfo.distance_text}</Typography>
           <Typography>Duration: {deliveryInfo.duration_text}</Typography>
-          <Typography>
-            Delivery Charge: ₹{deliveryInfo.delivery_charge || 0}
-          </Typography>
+          <Typography>Delivery Charge: ₹{deliveryInfo.delivery_charge || 0}</Typography>
           <Typography>Message: {deliveryInfo.message}</Typography>
         </Box>
       ) : null}
@@ -235,9 +240,7 @@ export default function CheckoutPage() {
         <Button
           variant="contained"
           onClick={handlePlaceOrder}
-          disabled={
-            placingOrder || cartItems.length === 0 || !selectedAddress
-          }
+          disabled={placingOrder || cartItems.length === 0 || !selectedAddress}
         >
           {placingOrder
             ? "Placing Order..."
