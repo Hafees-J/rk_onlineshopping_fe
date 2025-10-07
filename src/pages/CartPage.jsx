@@ -15,13 +15,14 @@ import {
 import { Add, Remove, Delete } from "@mui/icons-material";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom"; // ✅ added
 
 export default function CartPage() {
   const { auth } = useAuth();
+  const navigate = useNavigate(); // ✅ initialize navigate
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const fetchCart = async () => {
     if (!auth?.access) return;
@@ -68,22 +69,9 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = async () => {
-    setCheckoutLoading(true);
-    try {
-      const res = await axiosInstance.post(
-        "/orders/cart/checkout/",
-        {},
-        { headers: { Authorization: `Bearer ${auth.access}` } }
-      );
-      alert(`Order placed successfully! Order ID: ${res.data.order_id}`);
-      fetchCart();
-    } catch (err) {
-      console.error("Checkout failed", err);
-      setError("Checkout failed. Please try again.");
-    } finally {
-      setCheckoutLoading(false);
-    }
+  // ✅ Instead of directly placing the order, go to checkout page
+  const handleCheckout = () => {
+    navigate("/checkout"); // navigate to CheckoutPage
   };
 
   const totalAmount = cartItems.reduce(
@@ -166,10 +154,9 @@ export default function CartPage() {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleCheckout}
-              disabled={checkoutLoading}
+              onClick={handleCheckout} // ✅ go to checkout
             >
-              {checkoutLoading ? "Placing Order..." : "Checkout"}
+              Proceed to Checkout
             </Button>
           </Box>
         </>

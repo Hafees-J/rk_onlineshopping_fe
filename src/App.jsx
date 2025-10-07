@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Pages
+import Header from "./components/Header";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ShopAdminDashboard from "./pages/ShopAdminDashboard";
@@ -13,6 +14,8 @@ import ShopItemPage from "./pages/admin/ShopItemPage";
 import ShopItemOfferPage from "./pages/admin/ShopItemOfferPage";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // Private Route Component
 function PrivateRoute({ children }) {
@@ -23,6 +26,7 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <AuthProvider>
+      <Header />
       <Routes>
         {/* Default route */}
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -93,6 +97,22 @@ export default function App() {
           element={
             <PrivateRoute>
               <CartPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <PrivateRoute>
+              <CheckoutPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <ProfilePage />
             </PrivateRoute>
           }
         />

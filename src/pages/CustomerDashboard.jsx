@@ -1,6 +1,4 @@
-// src/pages/CustomerDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -12,13 +10,28 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Slide,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import MuiAlert from "@mui/material/Alert";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 export default function CustomerDashboard() {
-  const navigate = useNavigate();
   const { auth } = useAuth();
+  const theme = useTheme();
+  const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [shops, setShops] = useState([]);
@@ -29,8 +42,18 @@ export default function CustomerDashboard() {
   const [loadingItems, setLoadingItems] = useState(false);
   const [error, setError] = useState("");
 
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-  const [addingToCart, setAddingToCart] = useState({}); // { [shopItemId]: true/false }
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const [addingToCart, setAddingToCart] = useState({});
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    message: "",
+    item: null,
+  });
 
   // Fetch available subcategories
   useEffect(() => {
@@ -75,9 +98,7 @@ export default function CustomerDashboard() {
     try {
       const res = await axiosInstance.get(
         `/products/shops/by-subcategory/${subcategoryId}/`,
-        {
-          headers: { Authorization: `Bearer ${auth.access}` },
-        }
+        { headers: { Authorization: `Bearer ${auth.access}` } }
       );
       setShops(res.data);
     } catch (err) {
@@ -88,7 +109,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  // Fetch shop items when shop is clicked
+  // Fetch shop items
   const handleShopClick = async (shopId) => {
     setSelectedShop(shopId);
     setShopItems([]);
@@ -108,38 +129,88 @@ export default function CustomerDashboard() {
     }
   };
 
-  // Add to cart function
+  // Add to cart with 409 handling
   const handleAddToCart = async (item) => {
     if (addingToCart[item.id]) return;
 
     setAddingToCart((prev) => ({ ...prev, [item.id]: true }));
     try {
-      await axiosInstance.post(
+      const res = await axiosInstance.post(
         "/orders/cart/",
         { shop_item: item.id, quantity: 1 },
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
 
-      setSnackbar({ open: true, message: `${item.item_name} added to cart!`, severity: "success" });
+      setSnackbar({
+        open: true,
+        message: res.data.message || `${item.item_name} added to cart!`,
+        severity: "success",
+      });
     } catch (err) {
-      console.error("Failed to add to cart", err);
-      setSnackbar({ open: true, message: "Failed to add item to cart", severity: "error" });
+      // If 409 Conflict (different shop), show dialog
+      if (err.response?.status === 409) {
+        setConfirmDialog({
+          open: true,
+          message:
+            err.response.data.message ||
+            "Your cart contains items from another shop. Reset cart to add items from this shop ?",
+          item,
+        });
+      } else {
+        console.error("Failed to add to cart", err);
+        const message =
+          err.response?.data?.detail ||
+          err.response?.data?.message ||
+          "Failed to add item to cart";
+        setSnackbar({ open: true, message, severity: "error" });
+      }
     } finally {
       setAddingToCart((prev) => ({ ...prev, [item.id]: false }));
     }
   };
 
+  const handleConfirmReset = async (confirm) => {
+    const item = confirmDialog.item;
+    setConfirmDialog({ open: false, message: "", item: null });
+
+    if (!confirm || !item) {
+      setSnackbar({
+        open: true,
+        message: "Action cancelled. Item not added.",
+        severity: "info",
+      });
+      return;
+    }
+
+    try {
+      const resetRes = await axiosInstance.post(
+        "/orders/cart/",
+        { shop_item: item.id, quantity: 1, reset: true },
+        { headers: { Authorization: `Bearer ${auth.access}` } }
+      );
+
+      setSnackbar({
+        open: true,
+        message: resetRes.data.message || "Cart reset and item added!",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("Failed to reset and add item", err);
+      setSnackbar({
+        open: true,
+        message: "Failed to reset cart",
+        severity: "error",
+      });
+    }
+  };
+
   return (
-    <Box p={4}>
-      <Typography variant="h4" mb={3}>
-        Customer Dashboard
+    <Box p={isSmall ? 2 : 4}>
+      <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold">
+        🛒 Customer Dashboard
       </Typography>
 
-                <Button variant="contained" onClick={() => navigate("/cart")}>
-                  Cart
-                </Button>
-
-      {/* Subcategories */}
+      {/* SUBCATEGORIES */}
       <Typography variant="h6" mb={2}>
         Available Subcategories
       </Typography>
@@ -152,13 +223,21 @@ export default function CustomerDashboard() {
       ) : (
         <Grid container spacing={2} mb={4}>
           {subcategories.map((sub) => (
-            <Grid item key={sub.id} xs={12} sm={6} md={4}>
+            <Grid item key={sub.id} xs={12} sm={6} md={4} lg={3}>
               <Card
-                sx={{ cursor: "pointer" }}
+                sx={{
+                  cursor: "pointer",
+                  borderRadius: 3,
+                  boxShadow: 3,
+                  transition: "0.3s",
+                  "&:hover": { boxShadow: 6, transform: "translateY(-4px)" },
+                }}
                 onClick={() => handleSubcategoryClick(sub.id)}
               >
                 <CardContent>
-                  <Typography variant="h6">{sub.name}</Typography>
+                  <Typography variant="h6" textAlign="center">
+                    {sub.name}
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -166,24 +245,27 @@ export default function CustomerDashboard() {
         </Grid>
       )}
 
-      {/* Shops */}
+      {/* SHOPS */}
       {selectedSubcategory && (
         <>
           <Typography variant="h6" mb={2}>
-            Shops with this subcategory
+            Shops under this Subcategory
           </Typography>
-
           {loadingShops ? (
             <CircularProgress />
-          ) : error ? (
-            <Alert severity="error">{error}</Alert>
           ) : shops.length === 0 ? (
-            <Typography>No shops found for this subcategory</Typography>
+            <Typography>No shops found.</Typography>
           ) : (
             <Grid container spacing={2} mb={4}>
               {shops.map((shop) => (
-                <Grid item key={shop.id} xs={12} sm={6} md={4}>
-                  <Card>
+                <Grid item key={shop.id} xs={12} sm={6} md={4} lg={3}>
+                  <Card
+                    sx={{
+                      borderRadius: 3,
+                      boxShadow: 2,
+                      "&:hover": { boxShadow: 5 },
+                    }}
+                  >
                     <CardContent>
                       <Typography variant="h6">{shop.name}</Typography>
                       {shop.address && (
@@ -193,10 +275,7 @@ export default function CustomerDashboard() {
                       )}
                     </CardContent>
                     <CardActions>
-                      <Button
-                        size="small"
-                        onClick={() => handleShopClick(shop.id)}
-                      >
+                      <Button size="small" onClick={() => handleShopClick(shop.id)}>
                         View Items
                       </Button>
                     </CardActions>
@@ -208,28 +287,32 @@ export default function CustomerDashboard() {
         </>
       )}
 
-      {/* Shop Items */}
+      {/* ITEMS */}
       {selectedShop && (
         <>
           <Typography variant="h6" mb={2}>
             Items in this Shop
           </Typography>
-
           {loadingItems ? (
             <CircularProgress />
-          ) : error ? (
-            <Alert severity="error">{error}</Alert>
           ) : shopItems.length === 0 ? (
-            <Typography>No items found in this shop</Typography>
+            <Typography>No items found.</Typography>
           ) : (
             <Grid container spacing={2}>
               {shopItems.map((item) => (
-                <Grid item key={item.id} xs={12} sm={6} md={4}>
-                  <Card>
+                <Grid item key={item.id} xs={12} sm={6} md={4} lg={3}>
+                  <Card
+                    sx={{
+                      borderRadius: 3,
+                      boxShadow: 3,
+                      "&:hover": { boxShadow: 6 },
+                    }}
+                  >
                     <CardContent>
-                      <Typography variant="h6">{item.item_name}</Typography>
+                      <Typography variant="h6" gutterBottom>
+                        {item.item_name}
+                      </Typography>
 
-                      {/* Price with Offer */}
                       {item.offer_pct ? (
                         <>
                           <Typography
@@ -239,7 +322,7 @@ export default function CustomerDashboard() {
                           >
                             ₹{item.total_amount}
                           </Typography>
-                          <Typography variant="body1" color="error">
+                          <Typography variant="body1" color="error" fontWeight="bold">
                             ₹{item.discount_amount}
                           </Typography>
                         </>
@@ -251,13 +334,13 @@ export default function CustomerDashboard() {
                         Available: {item.available_quantity}
                       </Typography>
                     </CardContent>
-
                     <CardActions>
                       <Button
                         size="small"
                         variant="contained"
                         disabled={addingToCart[item.id]}
                         onClick={() => handleAddToCart(item)}
+                        fullWidth
                       >
                         {addingToCart[item.id] ? "Adding..." : "Add to Cart"}
                       </Button>
@@ -270,13 +353,45 @@ export default function CustomerDashboard() {
         </>
       )}
 
-      {/* Snackbar */}
+      {/* CONFIRM DIALOG */}
+      <Dialog
+        open={confirmDialog.open}
+        TransitionComponent={Transition}
+        keepMounted
+        onClose={() => handleConfirmReset(false)}
+      >
+        <DialogTitle>⚠️ Cart Reset Required</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmDialog.message}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleConfirmReset(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => handleConfirmReset(true)}
+          >
+            Reset & Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* SNACKBAR */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        message={snackbar.message}
-      />
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <MuiAlert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          variant="filled"
+          elevation={6}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 }
