@@ -15,6 +15,8 @@ import ShopItemOfferPage from "./pages/admin/ShopItemOfferPage";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import OrderPage from "./pages/OrderPage";
+import OrderHistoryPage from "./pages/OrderHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
 
 // Private Route Component
@@ -105,6 +107,22 @@ export default function App() {
           element={
             <PrivateRoute>
               <CheckoutPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/order/:id"
+          element={
+            <PrivateRoute>
+              <OrderPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/order-history"
+          element={
+            <PrivateRoute>
+              <OrderHistoryPage />
             </PrivateRoute>
           }
         />

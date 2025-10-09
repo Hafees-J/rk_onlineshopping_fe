@@ -122,35 +122,44 @@ export default function CheckoutPage() {
     }
   };
 
-  // Place order
-  const handlePlaceOrder = async () => {
-    if (!selectedAddress) {
-      setError("Please select a delivery address");
-      return;
-    }
+// Place order
+const handlePlaceOrder = async () => {
+  if (!selectedAddress) {
+    setError("Please select a delivery address");
+    return;
+  }
 
-    if (deliveryInfo && !deliveryInfo.delivery_available) {
-      setError("Delivery not available for this address");
-      return;
-    }
+  if (deliveryInfo && !deliveryInfo.delivery_available) {
+    setError("Delivery not available for this address");
+    return;
+  }
 
-    setPlacingOrder(true);
-    setError("");
+  setPlacingOrder(true);
+  setError("");
 
-    try {
-      const res = await axiosInstance.post(
-        "/orders/cart/checkout/",
-        { delivery_address: selectedAddress },
-        { headers: { Authorization: `Bearer ${auth.access}` } }
-      );
-      navigate(`/order/${res.data.order_id}`);
-    } catch (err) {
-      console.error("Error placing order:", err.response?.data || err);
-      setError(err.response?.data?.detail || "Failed to place order");
-    } finally {
-      setPlacingOrder(false);
-    }
-  };
+  try {
+    // ✅ Call your backend checkout endpoint
+    const res = await axiosInstance.post(
+      "/orders/cart/checkout/",
+      {
+        delivery_address: selectedAddress,
+        delivery_charge: deliveryInfo?.delivery_charge || 0,
+      },
+      { headers: { Authorization: `Bearer ${auth.access}` } }
+    );
+
+    // The backend returns { message, order_id }
+    const orderId = res.data.order_id;
+
+    // Redirect to order details page
+    navigate(`/order/${orderId}`);
+  } catch (err) {
+    console.error("Error placing order:", err.response?.data || err);
+    setError(err.response?.data?.detail || "Failed to place order");
+  } finally {
+    setPlacingOrder(false);
+  }
+};
 
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -236,17 +245,18 @@ export default function CheckoutPage() {
       ) : null}
 
       {/* Place Order */}
-      <Box mt={3}>
-        <Button
-          variant="contained"
-          onClick={handlePlaceOrder}
-          disabled={placingOrder || cartItems.length === 0 || !selectedAddress}
-        >
-          {placingOrder
-            ? "Placing Order..."
-            : `Place Order (₹${finalAmount.toFixed(2)})`}
-        </Button>
-      </Box>
+<Box mt={3}>
+  <Button
+    variant="contained"
+    onClick={handlePlaceOrder}
+    disabled={placingOrder || cartItems.length === 0 || !selectedAddress}
+  >
+    {placingOrder
+      ? "Placing Order..."
+      : `Place Order (₹${finalAmount.toFixed(2)})`}
+  </Button>
+</Box>
+
     </Box>
   );
 }

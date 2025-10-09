@@ -85,6 +85,20 @@ export default function Header() {
             </IconButton>
           </Tooltip>
 
+          <Typography
+            variant="button"
+            component={Link}
+            to="/order-history"
+            sx={{
+              textDecoration: "none",
+              color: "text.primary",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            Order History
+          </Typography>
+
           <Tooltip title="Logout">
             <IconButton color="error" onClick={handleLogout} size="large">
               <Logout />
