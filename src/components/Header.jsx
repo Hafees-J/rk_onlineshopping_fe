@@ -10,30 +10,30 @@ import {
   Tooltip,
 } from "@mui/material";
 import { ShoppingCart, AccountCircle, Logout, Home } from "@mui/icons-material";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function Header() {
+  const { auth, logout } = useAuth();
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
-  const token = localStorage.getItem("access");
 
-  // Fetch cart count
+  // Fetch cart count (only for customers)
   useEffect(() => {
-    if (token) {
+    if (auth?.access && auth.role === "customer") {
       axios
         .get("/api/orders/cart/", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${auth.access}` },
         })
-        .then((res) => setCartCount(res.data?.items?.length || 0))
+        .then((res) => setCartCount(res.data?.length || 0))
         .catch(() => setCartCount(0));
     }
-  }, [token]);
+  }, [auth]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    navigate("/login");
-  };
+  // Logo redirect based on role
+  const dashboardLink =
+    auth?.role === "customer" ? "/customer-dashboard" : "/shopadmin-dashboard";
 
   return (
     <AppBar position="sticky" color="default" elevation={1}>
@@ -44,7 +44,7 @@ export default function Header() {
           <Typography
             variant="h6"
             component={Link}
-            to="/customer-dashboard"
+            to={dashboardLink}
             sx={{
               textDecoration: "none",
               color: "text.primary",
@@ -57,6 +57,7 @@ export default function Header() {
 
         {/* Right - Profile / Cart / Logout */}
         <Box display="flex" alignItems="center" gap={2}>
+          {/* Profile */}
           <Tooltip title="Profile">
             <IconButton
               component={Link}
@@ -68,39 +69,37 @@ export default function Header() {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Cart">
+          {/* Cart only for customers */}
+          {auth?.role === "customer" && (
+            <Tooltip title="Cart">
+              <IconButton
+                component={Link}
+                to="/cart"
+                color="inherit"
+                size="large"
+              >
+                <Badge badgeContent={cartCount} color="error" overlap="circular">
+                  <ShoppingCart />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {/* Order History */}
+          <Tooltip title="Order History">
             <IconButton
               component={Link}
-              to="/cart"
+              to="/order-history"
               color="inherit"
               size="large"
             >
-              <Badge
-                badgeContent={cartCount}
-                color="error"
-                overlap="circular"
-              >
-                <ShoppingCart />
-              </Badge>
+              <ReceiptLongIcon />
             </IconButton>
           </Tooltip>
 
-          <Typography
-            variant="button"
-            component={Link}
-            to="/order-history"
-            sx={{
-              textDecoration: "none",
-              color: "text.primary",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
-          >
-            Order History
-          </Typography>
-
+          {/* Logout */}
           <Tooltip title="Logout">
-            <IconButton color="error" onClick={handleLogout} size="large">
+            <IconButton color="error" onClick={logout} size="large">
               <Logout />
             </IconButton>
           </Tooltip>

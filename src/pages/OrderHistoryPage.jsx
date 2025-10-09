@@ -55,7 +55,7 @@ export default function OrderHistoryPage() {
         const totalPrice = Number(order.total_price);
         const gst = Number(order.gst);
         const deliveryCharge = Number(order.delivery_charge);
-        const finalAmount = totalPrice + deliveryCharge;
+        const finalAmount = totalPrice;
 
         return (
           <Card key={order.id} sx={{ mb: 2 }}>

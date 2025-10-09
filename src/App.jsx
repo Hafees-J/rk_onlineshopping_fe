@@ -39,7 +39,7 @@ export default function App() {
 
         {/* Protected routes */}
         <Route
-          path="/dashboard"
+          path="/shopadmin-dashboard"
           element={
             <PrivateRoute>
               <ShopAdminDashboard />

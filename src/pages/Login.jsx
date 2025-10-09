@@ -25,7 +25,7 @@ const handleSubmit = async (e) => {
     if (role === "customer") {
       navigate("/customer-dashboard");
     } else if (role === "shopadmin" || role === "superadmin") {
-      navigate("/dashboard");
+      navigate("/shopadmin-dashboard");
     } else {
       navigate("/login"); // fallback
     }
