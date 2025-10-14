@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { ShoppingCart, AccountCircle, Logout, Home } from "@mui/icons-material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import axios from "axios";
+import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 export default function Header() {
@@ -22,12 +22,19 @@ export default function Header() {
   // Fetch cart count (only for customers)
   useEffect(() => {
     if (auth?.access && auth.role === "customer") {
-      axios
-        .get("/api/orders/cart/", {
+      axiosInstance
+        .get("orders/cart/", {
           headers: { Authorization: `Bearer ${auth.access}` },
         })
-        .then((res) => setCartCount(res.data?.length || 0))
-        .catch(() => setCartCount(0));
+        .then((res) => {
+          console.log("Cart API response:", res.data);
+
+          setCartCount(Array.isArray(res.data) ? res.data.length : 0);
+        })
+        .catch((err) => {
+          console.error("Failed to load cart:", err);
+          setCartCount(0);
+        });
     }
   }, [auth]);
 

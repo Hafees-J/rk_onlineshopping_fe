@@ -65,7 +65,7 @@ export default function OrderPage() {
         {order.delivery_address_details ? (
           <Typography>
             {order.delivery_address_details.address_line}, {order.delivery_address_details.city},{" "}
-            {order.delivery_address_details.state}, {order.delivery_address_details.zip_code}
+            {order.delivery_address_details.state}, {order.delivery_address_details.postal_code}
           </Typography>
         ) : (
           <Typography>N/A</Typography>

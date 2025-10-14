@@ -165,7 +165,7 @@ export default function CustomerDashboard() {
           open: true,
           message:
             err.response.data.message ||
-            "Your cart contains items from another shop. Reset cart to add items from this shop ?",
+            "Your cart contains items from another shop. Would you like to reset cart to add items from this shop ?",
           item,
         });
       } else {
