@@ -10,13 +10,14 @@ export function AuthProvider({ children }) {
     const role = localStorage.getItem("role");
     const username = localStorage.getItem("username");
     const shop_id = localStorage.getItem("shop_id");
+    const mobile_number = localStorage.getItem("mobile_number");
 
     return access && refresh
-      ? { access, refresh, role, username, shop_id }
+      ? { access, refresh, role, username, shop_id, mobile_number }
       : null;
   });
 
-  // Auto-refresh access token every 4 minutes
+  // 🔁 Auto-refresh access token every 4 minutes
   useEffect(() => {
     const interval = setInterval(async () => {
       const refresh = localStorage.getItem("refresh_token");
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       const res = await axiosInstance.post("users/login/", { username, password });
-      const { access, refresh, role, username: userName } = res.data;
+      const { access, refresh, role, username: userName, mobile_number } = res.data;
 
       let shop_id = null;
 
@@ -54,12 +55,14 @@ export function AuthProvider({ children }) {
         }
       }
 
+      // 🧩 Save to localStorage
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
       localStorage.setItem("role", role);
       localStorage.setItem("username", userName);
+      localStorage.setItem("mobile_number", mobile_number || "");
 
-      setAuth({ access, refresh, role, username: userName, shop_id });
+      setAuth({ access, refresh, role, username: userName, shop_id, mobile_number });
     } catch (err) {
       console.error("Login failed", err);
       throw err;
@@ -72,12 +75,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("role");
     localStorage.removeItem("username");
     localStorage.removeItem("shop_id");
+    localStorage.removeItem("mobile_number");
     setAuth(null);
     window.location.href = "/login";
   };
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, setAuth, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

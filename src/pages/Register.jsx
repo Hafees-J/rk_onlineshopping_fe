@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import React, { useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,7 +7,8 @@ export default function Register() {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");  // Added email state
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
@@ -20,8 +20,8 @@ export default function Register() {
     setError("");
     setSuccess("");
 
-    // Basic validation
-    if (!username || !email || !password || !password2) {
+    // ✅ Basic validation
+    if (!username || !email || !mobile || !password || !password2) {
       setError("All fields are required");
       return;
     }
@@ -32,7 +32,12 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await axiosInstance.post("users/register/", { username, email, password });
+      await axiosInstance.post("users/register/", {
+        username,
+        email,
+        mobile_number: mobile,
+        password,
+      });
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => {
         navigate("/login");
@@ -44,9 +49,7 @@ export default function Register() {
       if (data) {
         if (data.detail) message = data.detail;
         else if (typeof data === "object") {
-          message = Object.values(data)
-            .flat()
-            .join(" ");
+          message = Object.values(data).flat().join(" ");
         }
       }
       setError(message);
@@ -75,6 +78,14 @@ export default function Register() {
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+        />
+        <TextField
+          label="Mobile Number"
+          type="tel"
+          fullWidth
+          margin="normal"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
         />
         <TextField
           label="Password"

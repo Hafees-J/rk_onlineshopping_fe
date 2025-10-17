@@ -72,6 +72,7 @@ export default function OrderPage() {
             </Typography>
             <Typography>{order.customer_name}</Typography>
             <Typography>{order.customer_email}</Typography>
+            <Typography>{order.customer_mobile}</Typography>
           </Box>
 
           <Box textAlign="right">

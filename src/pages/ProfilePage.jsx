@@ -122,6 +122,9 @@ export default function ProfilePage() {
             <strong>Username:</strong> {auth?.username}
           </Typography>
           <Typography variant="body1">
+            <strong>Mobile No:</strong> {auth?.mobile_number}
+          </Typography>
+          <Typography variant="body1">
             <strong>Role:</strong> {auth?.role}
           </Typography>
         </CardContent>
