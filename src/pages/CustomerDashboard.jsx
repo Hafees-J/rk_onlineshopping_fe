@@ -18,6 +18,7 @@ import {
   Slide,
   useTheme,
   useMediaQuery,
+  CardMedia,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import axiosInstance from "../api/axios";
@@ -59,15 +60,11 @@ export default function CustomerDashboard() {
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (!auth?.access) return;
-      console.log("Fetching subcategories...");
       setLoadingSubcategories(true);
       try {
         const res = await axiosInstance.get("/products/subcategories/available/", {
           headers: { Authorization: `Bearer ${auth.access}` },
         });
-
-        console.log("Subcategories API response:", res.data);
-
         const uniqueSubs = [];
         const seen = new Set();
         res.data.forEach((sub) => {
@@ -76,23 +73,18 @@ export default function CustomerDashboard() {
             uniqueSubs.push(sub);
           }
         });
-
         setSubcategories(uniqueSubs);
-        console.log("Unique subcategories set:", uniqueSubs);
       } catch (err) {
-        console.error("Failed to fetch subcategories:", err);
         setError("Failed to load subcategories");
       } finally {
         setLoadingSubcategories(false);
       }
     };
-
     fetchSubcategories();
   }, [auth]);
 
   // Fetch shops by subcategory
   const handleSubcategoryClick = async (subcategoryId) => {
-    console.log("Subcategory clicked:", subcategoryId);
     setSelectedSubcategory(subcategoryId);
     setShops([]);
     setSelectedShop(null);
@@ -105,10 +97,8 @@ export default function CustomerDashboard() {
         `/products/shops/by-subcategory/${subcategoryId}/`,
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
-      console.log("Shops API response:", res.data);
       setShops(res.data);
     } catch (err) {
-      console.error("Failed to fetch shops:", err);
       setError("Failed to load shops for this subcategory");
     } finally {
       setLoadingShops(false);
@@ -117,7 +107,6 @@ export default function CustomerDashboard() {
 
   // Fetch shop items
   const handleShopClick = async (shopId) => {
-    console.log("Shop clicked:", shopId);
     setSelectedShop(shopId);
     setShopItems([]);
     setLoadingItems(true);
@@ -127,21 +116,17 @@ export default function CustomerDashboard() {
       const res = await axiosInstance.get(`/products/shops/${shopId}/items/`, {
         headers: { Authorization: `Bearer ${auth.access}` },
       });
-      console.log("Shop items API response:", res.data);
       setShopItems(res.data);
     } catch (err) {
-      console.error("Failed to fetch shop items:", err);
       setError("Failed to load shop items");
     } finally {
       setLoadingItems(false);
     }
   };
 
-  // Add to cart with 409 handling
+  // Add to cart
   const handleAddToCart = async (item) => {
-    console.log("Attempting to add to cart:", item);
     if (addingToCart[item.id]) return;
-
     setAddingToCart((prev) => ({ ...prev, [item.id]: true }));
     try {
       const res = await axiosInstance.post(
@@ -149,32 +134,26 @@ export default function CustomerDashboard() {
         { shop_item: item.id, quantity: 1 },
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
-
-      console.log("Add to cart API response:", res.data);
-
       setSnackbar({
         open: true,
         message: res.data.message || `${item.item_name} added to cart!`,
         severity: "success",
       });
     } catch (err) {
-      // If 409 Conflict (different shop), show dialog
       if (err.response?.status === 409) {
-        console.warn("409 Conflict - cart has items from another shop:", err.response.data);
         setConfirmDialog({
           open: true,
           message:
             err.response.data.message ||
-            "Your cart contains items from another shop. Would you like to reset cart to add items from this shop ?",
+            "Your cart contains items from another shop. Reset cart to add this item?",
           item,
         });
       } else {
-        console.error("Failed to add to cart:", err);
-        const message =
-          err.response?.data?.detail ||
-          err.response?.data?.message ||
-          "Failed to add item to cart";
-        setSnackbar({ open: true, message, severity: "error" });
+        setSnackbar({
+          open: true,
+          message: "Failed to add item to cart",
+          severity: "error",
+        });
       }
     } finally {
       setAddingToCart((prev) => ({ ...prev, [item.id]: false }));
@@ -183,17 +162,9 @@ export default function CustomerDashboard() {
 
   const handleConfirmReset = async (confirm) => {
     const item = confirmDialog.item;
-    console.log("Cart reset confirmation:", confirm, "for item:", item);
     setConfirmDialog({ open: false, message: "", item: null });
 
-    if (!confirm || !item) {
-      setSnackbar({
-        open: true,
-        message: "Action cancelled. Item not added.",
-        severity: "info",
-      });
-      return;
-    }
+    if (!confirm || !item) return;
 
     try {
       const resetRes = await axiosInstance.post(
@@ -201,15 +172,12 @@ export default function CustomerDashboard() {
         { shop_item: item.id, quantity: 1, reset: true },
         { headers: { Authorization: `Bearer ${auth.access}` } }
       );
-      console.log("Cart reset API response:", resetRes.data);
-
       setSnackbar({
         open: true,
         message: resetRes.data.message || "Cart reset and item added!",
         severity: "success",
       });
-    } catch (err) {
-      console.error("Failed to reset and add item:", err);
+    } catch {
       setSnackbar({
         open: true,
         message: "Failed to reset cart",
@@ -218,24 +186,27 @@ export default function CustomerDashboard() {
     }
   };
 
+  const getImageUrl = (url) => {
+    if (!url) return "https://via.placeholder.com/200x150?text=No+Image";
+    return url.startsWith("http") ? url : `${axiosInstance.defaults.baseURL}${url}`;
+  };
+
   return (
     <Box p={isSmall ? 2 : 4}>
       <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold">
-        🛒 Customer Dashboard
+        Rajakumari Arabian Cafe
       </Typography>
 
       {/* SUBCATEGORIES */}
-      <Typography variant="h6" mb={2}>
-        Available Subcategories
+      <Typography variant="h5" mb={2} fontWeight="bold">
+       What's on your mind?
       </Typography>
       {loadingSubcategories ? (
         <CircularProgress />
-      ) : error ? (
-        <Alert severity="error">{error}</Alert>
       ) : subcategories.length === 0 ? (
         <Typography>No subcategories available</Typography>
       ) : (
-        <Grid container spacing={2} mb={4}>
+        <Grid container spacing={4} mb={4}>
           {subcategories.map((sub) => (
             <Grid item key={sub.id} xs={12} sm={6} md={4} lg={3}>
               <Card
@@ -248,6 +219,12 @@ export default function CustomerDashboard() {
                 }}
                 onClick={() => handleSubcategoryClick(sub.id)}
               >
+                <CardMedia
+                  component="img"
+                  height="160"
+                  image={getImageUrl(sub.image)}
+                  alt={sub.name}
+                />
                 <CardContent>
                   <Typography variant="h6" textAlign="center">
                     {sub.name}
@@ -263,7 +240,7 @@ export default function CustomerDashboard() {
       {selectedSubcategory && (
         <>
           <Typography variant="h6" mb={2}>
-            Shops under this Subcategory
+            Spots with your selected taste
           </Typography>
           {loadingShops ? (
             <CircularProgress />
@@ -280,6 +257,12 @@ export default function CustomerDashboard() {
                       "&:hover": { boxShadow: 5 },
                     }}
                   >
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={getImageUrl(shop.image)}
+                      alt={shop.name}
+                    />
                     <CardContent>
                       <Typography variant="h6">{shop.name}</Typography>
                       {shop.address && (
@@ -305,7 +288,7 @@ export default function CustomerDashboard() {
       {selectedShop && (
         <>
           <Typography variant="h6" mb={2}>
-            Items in this Shop
+            Explore the taste!
           </Typography>
           {loadingItems ? (
             <CircularProgress />
@@ -322,6 +305,12 @@ export default function CustomerDashboard() {
                       "&:hover": { boxShadow: 6 },
                     }}
                   >
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={getImageUrl(item.display_image)}
+                      alt={item.item_name}
+                    />
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         {item.item_name}

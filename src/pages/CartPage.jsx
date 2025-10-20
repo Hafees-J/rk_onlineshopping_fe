@@ -11,15 +11,16 @@ import {
   Grid,
   Alert,
   TextField,
+  CardMedia,
 } from "@mui/material";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom"; // ✅ added
+import { useNavigate } from "react-router-dom";
 
 export default function CartPage() {
   const { auth } = useAuth();
-  const navigate = useNavigate(); // ✅ initialize navigate
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,9 +70,8 @@ export default function CartPage() {
     }
   };
 
-  // ✅ Instead of directly placing the order, go to checkout page
   const handleCheckout = () => {
-    navigate("/checkout"); // navigate to CheckoutPage
+    navigate("/checkout");
   };
 
   const totalAmount = cartItems.reduce(
@@ -96,9 +96,37 @@ export default function CartPage() {
           <Grid container spacing={2} mb={4}>
             {cartItems.map((item) => (
               <Grid item key={item.id} xs={12} sm={6} md={4}>
-                <Card>
+                <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+                  {/* ✅ IMAGE SECTION */}
+                  {item.display_image ? (
+                  <CardMedia
+                    component="img"
+                    height="160"
+                    image={
+                      item.display_image?.startsWith("http")
+                        ? item.display_image
+                        : `http://127.0.0.1:8000${item.display_image}`
+                    }
+                    alt={item.shop_item_name}
+                  />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: 180,
+                        backgroundColor: "#f5f5f5",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#999",
+                        fontSize: 14,
+                      }}
+                    >
+                      No Image
+                    </Box>
+                  )}
+
                   <CardContent>
-                    <Typography variant="h6">
+                    <Typography variant="h6" gutterBottom>
                       {item.shop_item_name || "Unnamed Item"}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -106,6 +134,7 @@ export default function CartPage() {
                       {(item.price * item.quantity).toFixed(2)}
                     </Typography>
                   </CardContent>
+
                   <CardActions>
                     <IconButton
                       onClick={() =>
@@ -150,11 +179,13 @@ export default function CartPage() {
               mt: 3,
             }}
           >
-            <Typography variant="h6">Total: ₹{totalAmount.toFixed(2)}</Typography>
+            <Typography variant="h6">
+              Total: ₹{totalAmount.toFixed(2)}
+            </Typography>
             <Button
               variant="contained"
               color="primary"
-              onClick={handleCheckout} // ✅ go to checkout
+              onClick={handleCheckout}
             >
               Proceed to Checkout
             </Button>

@@ -47,7 +47,7 @@ export default function Header() {
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
         {/* Left - Logo / Title */}
         <Box display="flex" alignItems="center">
-          <Home sx={{ mr: 1, color: "primary.main" }} />
+          <Home sx={{ mr: 1, color: "primary.main" }}/>
           <Typography
             variant="h6"
             component={Link}
@@ -58,7 +58,7 @@ export default function Header() {
               fontWeight: 600,
             }}
           >
-            RK Online Shop
+            Home
           </Typography>
         </Box>
 
