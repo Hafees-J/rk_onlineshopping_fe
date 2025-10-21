@@ -194,7 +194,7 @@ export default function CustomerDashboard() {
   return (
     <Box p={isSmall ? 2 : 4}>
       <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold">
-        Rajakumari Arabian Cafe
+        Arabian Cafe
       </Typography>
 
       {/* SUBCATEGORIES */}
@@ -239,8 +239,8 @@ export default function CustomerDashboard() {
       {/* SHOPS */}
       {selectedSubcategory && (
         <>
-          <Typography variant="h6" mb={2}>
-            Spots with your selected taste
+          <Typography variant="h5" mb={2} fontWeight="bold">
+            Choose your nearest restuarant ...
           </Typography>
           {loadingShops ? (
             <CircularProgress />

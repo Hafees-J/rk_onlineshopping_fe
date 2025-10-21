@@ -9,7 +9,12 @@ import {
   Box,
   Tooltip,
 } from "@mui/material";
-import { ShoppingCart, AccountCircle, Logout, Home } from "@mui/icons-material";
+import {
+  ShoppingCart,
+  AccountCircle,
+  Logout,
+  Home,
+} from "@mui/icons-material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
@@ -28,7 +33,6 @@ export default function Header() {
         })
         .then((res) => {
           console.log("Cart API response:", res.data);
-
           setCartCount(Array.isArray(res.data) ? res.data.length : 0);
         })
         .catch((err) => {
@@ -38,16 +42,21 @@ export default function Header() {
     }
   }, [auth]);
 
-  // Logo redirect based on role
   const dashboardLink =
     auth?.role === "customer" ? "/customer-dashboard" : "/shopadmin-dashboard";
 
   return (
     <AppBar position="sticky" color="default" elevation={1}>
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        {/* Left - Logo / Title */}
-        <Box display="flex" alignItems="center">
-          <Home sx={{ mr: 1, color: "primary.main" }}/>
+      <Toolbar
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {/* ---------- LEFT SECTION ---------- */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <Home sx={{ color: "primary.main" }} />
           <Typography
             variant="h6"
             component={Link}
@@ -62,7 +71,35 @@ export default function Header() {
           </Typography>
         </Box>
 
-        {/* Right - Profile / Cart / Logout */}
+        {/* ---------- CENTER TITLE + LOGO ---------- */}
+        <Box
+          sx={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <img
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvSFTCAH5WNk_bRzoSauquIVuFQxXP-zRe6Q&s" // 👈 Replace with your logo path (e.g. /images/logo.png)
+            alt="App Logo"
+            style={{ height: 35, width: 35 }}
+          />
+          <Typography
+            variant="h5"
+            sx={{
+              color: "red",
+              fontWeight: "bold",
+              letterSpacing: 1,
+            }}
+          >
+            rajakumari
+          </Typography>
+        </Box>
+
+        {/* ---------- RIGHT SECTION ---------- */}
         <Box display="flex" alignItems="center" gap={2}>
           {/* Profile */}
           <Tooltip title="Profile">
