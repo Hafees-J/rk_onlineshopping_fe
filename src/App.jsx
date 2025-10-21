@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import ShopAdminDashboard from "./pages/ShopAdminDashboard";
 import CategoriesPage from "./pages/admin/CategoriesPage";
 import SubCategoriesPage from "./pages/admin/SubCategoriesPage";
+import HSNPage from "./pages/admin/HsnPage";
 import ItemsPage from "./pages/admin/ItemsPage";
 import ShopItemPage from "./pages/admin/ShopItemPage";
 import ShopItemOfferPage from "./pages/admin/ShopItemOfferPage";
@@ -59,6 +60,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <SubCategoriesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/hsn"
+          element={
+            <PrivateRoute>
+              <HSNPage />
             </PrivateRoute>
           }
         />

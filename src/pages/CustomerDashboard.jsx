@@ -193,7 +193,7 @@ export default function CustomerDashboard() {
 
   return (
     <Box p={isSmall ? 2 : 4}>
-      <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold">
+      <Typography variant="h4" mb={3} textAlign="center" fontWeight="bold" fontStyle={"italic"}>
         Arabian Cafe
       </Typography>
 
@@ -226,7 +226,7 @@ export default function CustomerDashboard() {
                   alt={sub.name}
                 />
                 <CardContent>
-                  <Typography variant="h6" textAlign="center">
+                  <Typography variant="h6" textAlign="center" fontStyle={"italic"}>
                     {sub.name}
                   </Typography>
                 </CardContent>
@@ -312,7 +312,7 @@ export default function CustomerDashboard() {
                       alt={item.item_name}
                     />
                     <CardContent>
-                      <Typography variant="h6" gutterBottom>
+                      <Typography variant="h6" gutterBottom fontStyle={"italic"}>
                         {item.item_name}
                       </Typography>
 

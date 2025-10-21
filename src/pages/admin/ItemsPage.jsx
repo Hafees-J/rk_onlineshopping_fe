@@ -99,7 +99,7 @@ const ItemsPage = () => {
       form.append("subcategory", formData.subcategory);
       form.append("name", formData.name);
       form.append("description", formData.description);
-      if (formData.hsn) form.append("hsn", formData.hsn);
+      if (formData.hsn) form.append("hsn_id", formData.hsn);
       if (formData.image) form.append("image", formData.image);
 
       if (editingId) {
@@ -254,7 +254,7 @@ const ItemsPage = () => {
               <TableCell>{item.name}</TableCell>
               <TableCell>{item.description}</TableCell>
               <TableCell>
-                {item.hsn ? hsnList.find((h) => h.id === item.hsn)?.hsncode : "N/A"}
+                {item.hsn ? `${item.hsn.hsncode} (${item.hsn.gst}%)` : "N/A"}
               </TableCell>
               <TableCell>
                 {item.image && (

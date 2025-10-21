@@ -27,6 +27,9 @@ export default function ShopAdminDashboard() {
           <Button variant="contained" onClick={() => navigate("/subcategories")}>
             Subcategories
           </Button>
+          <Button variant="contained" onClick={() => navigate("/hsn")}>
+            HSN codes
+          </Button>
           <Button variant="contained" onClick={() => navigate("/items")}>
             Items
           </Button>
