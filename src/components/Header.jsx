@@ -8,12 +8,17 @@ import {
   Badge,
   Box,
   Tooltip,
+  Button,
+  Container,
+  Avatar,
+  useScrollTrigger,
 } from "@mui/material";
 import {
   ShoppingCart,
   AccountCircle,
   Logout,
   Home,
+  Dashboard,
 } from "@mui/icons-material";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import axiosInstance from "../api/axios";
@@ -23,8 +28,11 @@ export default function Header() {
   const { auth, logout } = useAuth();
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
+  const trigger = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 0,
+  });
 
-  // Fetch cart count (only for customers)
   useEffect(() => {
     if (auth?.access && auth.role === "customer") {
       axiosInstance
@@ -46,109 +54,175 @@ export default function Header() {
     auth?.role === "customer" ? "/customer-dashboard" : "/shopadmin-dashboard";
 
   return (
-    <AppBar position="sticky" color="default" elevation={1}>
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        {/* ---------- LEFT SECTION ---------- */}
-        <Box display="flex" alignItems="center" gap={1}>
-          <Home sx={{ color: "primary.main" }} />
-          <Typography
-            variant="h6"
+    <AppBar
+      position="sticky"
+      elevation={trigger ? 4 : 0}
+      sx={{
+        backgroundColor: trigger ? '#ffffff' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.3s ease',
+      }}
+    >
+      <Container maxWidth="xl">
+        <Toolbar
+          disableGutters
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            py: 1,
+          }}
+        >
+          <Box
             component={Link}
             to={dashboardLink}
             sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
               textDecoration: "none",
-              color: "text.primary",
-              fontWeight: 600,
+              transition: 'transform 0.2s ease',
+              '&:hover': {
+                transform: 'scale(1.02)',
+              },
             }}
           >
-            Home
-          </Typography>
-        </Box>
-
-        {/* ---------- CENTER TITLE + LOGO ---------- */}
-        <Box
-          sx={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
-        >
-          <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvSFTCAH5WNk_bRzoSauquIVuFQxXP-zRe6Q&s" // 👈 Replace with your logo path (e.g. /images/logo.png)
-            alt="App Logo"
-            style={{ height: 35, width: 35 }}
-          />
-          <Typography
-            variant="h5"
-            sx={{
-              color: "red",
-              fontWeight: "bold",
-              letterSpacing: 1,
-            }}
-          >
-            rajakumari
-          </Typography>
-        </Box>
-
-        {/* ---------- RIGHT SECTION ---------- */}
-        <Box display="flex" alignItems="center" gap={2}>
-          {/* Profile */}
-          <Tooltip title="Profile">
-            <IconButton
-              component={Link}
-              to="/profile"
-              color="inherit"
-              size="large"
+            <Avatar
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvSFTCAH5WNk_bRzoSauquIVuFQxXP-zRe6Q&s"
+              alt="Rajakumari Logo"
+              sx={{
+                width: 48,
+                height: 48,
+                border: '2px solid',
+                borderColor: 'primary.main',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            />
+            <Typography
+              variant="h5"
+              sx={{
+                color: '#d32f2f',
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                textTransform: 'lowercase',
+                fontFamily: '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+              }}
             >
-              <AccountCircle />
-            </IconButton>
-          </Tooltip>
+              rajakumari
+            </Typography>
+          </Box>
 
-          {/* Cart only for customers */}
-          {auth?.role === "customer" && (
-            <Tooltip title="Cart">
+          <Box display="flex" alignItems="center" gap={1}>
+            <Button
+              component={Link}
+              to={dashboardLink}
+              startIcon={<Dashboard />}
+              sx={{
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Dashboard
+            </Button>
+
+            <Tooltip title="Profile" arrow>
               <IconButton
                 component={Link}
-                to="/cart"
-                color="inherit"
-                size="large"
+                to="/profile"
+                sx={{
+                  color: 'text.primary',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
               >
-                <Badge badgeContent={cartCount} color="error" overlap="circular">
-                  <ShoppingCart />
-                </Badge>
+                <AccountCircle sx={{ fontSize: 28 }} />
               </IconButton>
             </Tooltip>
-          )}
 
-          {/* Order History */}
-          <Tooltip title="Order History">
-            <IconButton
-              component={Link}
-              to="/order-history"
-              color="inherit"
-              size="large"
-            >
-              <ReceiptLongIcon />
-            </IconButton>
-          </Tooltip>
+            {auth?.role === "customer" && (
+              <Tooltip title="Shopping Cart" arrow>
+                <IconButton
+                  component={Link}
+                  to="/cart"
+                  sx={{
+                    color: 'text.primary',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  <Badge
+                    badgeContent={cartCount}
+                    color="error"
+                    overlap="circular"
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        minWidth: 20,
+                        height: 20,
+                      },
+                    }}
+                  >
+                    <ShoppingCart sx={{ fontSize: 28 }} />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+            )}
 
-          {/* Logout */}
-          <Tooltip title="Logout">
-            <IconButton color="error" onClick={logout} size="large">
-              <Logout />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Toolbar>
+            <Tooltip title="Order History" arrow>
+              <IconButton
+                component={Link}
+                to="/order-history"
+                sx={{
+                  color: 'text.primary',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                <ReceiptLongIcon sx={{ fontSize: 28 }} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Logout" arrow>
+              <IconButton
+                onClick={logout}
+                sx={{
+                  color: '#d32f2f',
+                  ml: 1,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                <Logout sx={{ fontSize: 28 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Toolbar>
+      </Container>
     </AppBar>
   );
 }
