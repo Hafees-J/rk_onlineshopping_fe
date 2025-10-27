@@ -29,6 +29,8 @@ import {
   Image as ImageIcon,
   ArrowBack,
   CloudUpload,
+  Search,
+  Clear,
 } from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
@@ -39,6 +41,8 @@ const CategoriesPage = () => {
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({ name: "", description: "", image: null });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -68,12 +72,30 @@ const CategoriesPage = () => {
           : cat.image,
       }));
       setCategories(categoriesWithFullUrl);
+      setFilteredCategories(categoriesWithFullUrl);
     } catch (error) {
       console.error("Error fetching categories", error);
       setSnackbar({ open: true, message: 'Failed to load categories', severity: 'error' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredCategories(categories);
+    } else {
+      const filtered = categories.filter((cat) =>
+        cat.name.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredCategories(filtered);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setFilteredCategories(categories);
   };
 
   const handleChange = (e) => {
@@ -220,10 +242,93 @@ const CategoriesPage = () => {
       </Box>
 
       <Container maxWidth="lg">
-        {loading && categories.length === 0 ? (
+        <Paper
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 3,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          }}
+        >
+          <TextField
+            fullWidth
+            placeholder="Search categories by name..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <Search sx={{ color: '#667eea', mr: 1 }} />
+              ),
+              endAdornment: searchQuery && (
+                <IconButton
+                  onClick={handleClearSearch}
+                  size="small"
+                  sx={{
+                    color: '#757575',
+                    '&:hover': {
+                      backgroundColor: '#f0f3ff',
+                      color: '#667eea',
+                    },
+                  }}
+                >
+                  <Clear />
+                </IconButton>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&:hover fieldset': {
+                  borderColor: '#667eea',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                },
+              },
+            }}
+          />
+        </Paper>
+
+        {loading && filteredCategories.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress size={60} thickness={4} sx={{ color: '#667eea' }} />
           </Box>
+        ) : filteredCategories.length === 0 && searchQuery ? (
+          <Paper
+            sx={{
+              p: 8,
+              textAlign: 'center',
+              borderRadius: 3,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+            }}
+          >
+            <Search sx={{ fontSize: 100, color: '#e0e0e0', mb: 3 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
+              No Results Found
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              No categories match "{searchQuery}"
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={handleClearSearch}
+              sx={{
+                borderColor: '#667eea',
+                color: '#667eea',
+                fontWeight: 700,
+                textTransform: 'none',
+                py: 1.5,
+                px: 4,
+                borderRadius: 2,
+                '&:hover': {
+                  borderColor: '#5568d3',
+                  backgroundColor: '#f0f3ff',
+                },
+              }}
+            >
+              Clear Search
+            </Button>
+          </Paper>
         ) : categories.length === 0 ? (
           <Paper
             sx={{
@@ -262,97 +367,115 @@ const CategoriesPage = () => {
             </Button>
           </Paper>
         ) : (
-          <Grid container spacing={3}>
-            {categories.map((cat) => (
-              <Grid item xs={12} sm={6} md={4} key={cat.id}>
-                <Card
+          <>
+            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body1" color="text.secondary">
+                Showing {filteredCategories.length} of {categories.length} categories
+              </Typography>
+              {searchQuery && (
+                <Chip
+                  label={`Filtered by: "${searchQuery}"`}
+                  onDelete={handleClearSearch}
                   sx={{
-                    height: '100%',
-                    borderRadius: 3,
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                      transform: 'translateY(-4px)',
-                    },
+                    backgroundColor: '#f0f3ff',
+                    color: '#667eea',
+                    fontWeight: 600,
                   }}
-                >
-                  <Box
-                    sx={{
-                      height: 180,
-                      backgroundColor: '#f0f3ff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <ImageIcon sx={{ fontSize: 80, color: '#667eea', opacity: 0.3 }} />
-                    )}
-                  </Box>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
-                      {cat.name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
+                />
+              )}
+            </Box>
+            <Grid container spacing={3}>
+                {filteredCategories.map((cat) => (
+                  <Grid item xs={12} sm={6} md={4} key={cat.id}>
+                    <Card
                       sx={{
-                        mb: 2,
-                        height: 40,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
+                        height: '100%',
+                        borderRadius: 3,
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                          transform: 'translateY(-4px)',
+                        },
                       }}
                     >
-                      {cat.description || 'No description available'}
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                      <IconButton
-                        onClick={() => handleEdit(cat)}
+                      <Box
                         sx={{
+                          height: 180,
                           backgroundColor: '#f0f3ff',
-                          color: '#667eea',
-                          '&:hover': {
-                            backgroundColor: '#667eea',
-                            color: 'white',
-                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
                         }}
                       >
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDelete(cat.id)}
-                        sx={{
-                          backgroundColor: '#ffebee',
-                          color: '#f44336',
-                          '&:hover': {
-                            backgroundColor: '#f44336',
-                            color: 'white',
-                          },
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+                        {cat.image ? (
+                          <img
+                            src={cat.image}
+                            alt={cat.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <ImageIcon sx={{ fontSize: 80, color: '#667eea', opacity: 0.3 }} />
+                        )}
+                      </Box>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
+                          {cat.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            mb: 2,
+                            height: 40,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {cat.description || 'No description available'}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <IconButton
+                            onClick={() => handleEdit(cat)}
+                            sx={{
+                              backgroundColor: '#f0f3ff',
+                              color: '#667eea',
+                              '&:hover': {
+                                backgroundColor: '#667eea',
+                                color: 'white',
+                              },
+                            }}
+                          >
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDelete(cat.id)}
+                            sx={{
+                              backgroundColor: '#ffebee',
+                              color: '#f44336',
+                              '&:hover': {
+                                backgroundColor: '#f44336',
+                                color: 'white',
+                              },
+                            }}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+            </Grid>
+          </>
         )}
       </Container>
 
