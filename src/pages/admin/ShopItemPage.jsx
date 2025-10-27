@@ -130,6 +130,9 @@ export default function ShopItemPage() {
       );
       const shopItemsWithFullUrl = (res.data || []).map((shopItem) => ({
         ...shopItem,
+        display_image: shopItem.display_image && !shopItem.display_image.startsWith("http")
+          ? `${axiosInstance.defaults.baseURL}${shopItem.display_image}`
+          : shopItem.display_image,
         item: {
           ...shopItem.item,
           image: shopItem.item?.image && !shopItem.item.image.startsWith("http")
@@ -504,9 +507,9 @@ export default function ShopItemPage() {
                         position: 'relative',
                       }}
                     >
-                      {shopItem.item?.image ? (
+                      {shopItem.display_image ? (
                         <img
-                          src={shopItem.item.image}
+                          src={shopItem.display_image}
                           alt={shopItem.item_name || shopItem.item?.name}
                           style={{
                             width: '100%',
