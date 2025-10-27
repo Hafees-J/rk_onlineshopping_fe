@@ -82,12 +82,15 @@ export default function ShopItemOfferPage() {
       const res = await axiosInstance.get("/products/shop-items/");
       const shopItemsWithFullUrl = res.data.map((shopItem) => ({
         ...shopItem,
-        item: {
-          ...shopItem.item,
-          image: shopItem.item?.image && !shopItem.item.image.startsWith("http")
-            ? `${axiosInstance.defaults.baseURL}${shopItem.item.image}`
-            : shopItem.item?.image,
-        },
+        imageUrl: shopItem.image?.startsWith("http")
+          ? shopItem.image
+          : shopItem.display_image?.startsWith("http")
+          ? shopItem.display_image
+          : shopItem.image
+          ? `${axiosInstance.defaults.baseURL}${shopItem.image}`
+          : shopItem.display_image
+          ? `${axiosInstance.defaults.baseURL}${shopItem.display_image}`
+          : null,
       }));
       setShopItems(shopItemsWithFullUrl);
     } catch (err) {
@@ -438,7 +441,7 @@ export default function ShopItemOfferPage() {
               {filteredOffers.map((offer) => {
                 const shopItem = getShopItemDetails(offer.shop_item);
                 const itemName = shopItem?.item_name || shopItem?.item?.name || 'Unknown Item';
-                const itemImage = shopItem?.item?.image;
+                const itemImage = shopItem?.imageUrl;
 
                 return (
                   <Grid item xs={12} sm={6} md={4} key={offer.id}>
@@ -628,7 +631,7 @@ export default function ShopItemOfferPage() {
                 </Select>
               </FormControl>
 
-              {form.shop_item && getShopItemDetails(form.shop_item)?.item?.image && (
+              {form.shop_item && getShopItemDetails(form.shop_item)?.imageUrl && (
                 <Box
                   sx={{
                     display: 'flex',
@@ -636,7 +639,7 @@ export default function ShopItemOfferPage() {
                   }}
                 >
                   <img
-                    src={getShopItemDetails(form.shop_item).item.image}
+                    src={getShopItemDetails(form.shop_item).imageUrl}
                     alt="Item Preview"
                     style={{
                       maxWidth: '100%',
