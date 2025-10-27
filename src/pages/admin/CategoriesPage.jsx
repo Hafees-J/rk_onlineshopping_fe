@@ -8,14 +8,28 @@ import {
   Typography,
   Grid,
   IconButton,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Alert,
+  Container,
+  Paper,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Stack,
+  Avatar,
+  CircularProgress,
+  Snackbar,
 } from "@mui/material";
-import { Delete, Edit } from "@mui/icons-material";
+import {
+  Delete,
+  Edit,
+  Add,
+  Category as CategoryIcon,
+  Image as ImageIcon,
+  ArrowBack,
+  CloudUpload,
+} from "@mui/icons-material";
 import axiosInstance from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +41,10 @@ const CategoriesPage = () => {
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({ name: "", description: "", image: null });
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const allowedRoles = ["admin", "shopadmin"];
   const hasPermission = auth && allowedRoles.includes(auth.role);
@@ -40,6 +58,7 @@ const CategoriesPage = () => {
   }, [hasPermission]);
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
       const res = await axiosInstance.get("/products/categories/");
       const categoriesWithFullUrl = res.data.map((cat) => ({
@@ -51,13 +70,24 @@ const CategoriesPage = () => {
       setCategories(categoriesWithFullUrl);
     } catch (error) {
       console.error("Error fetching categories", error);
+      setSnackbar({ open: true, message: 'Failed to load categories', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "image") {
-      setFormData({ ...formData, image: files[0] });
+      const file = files[0];
+      setFormData({ ...formData, image: file });
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -65,6 +95,7 @@ const CategoriesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const form = new FormData();
       form.append("name", formData.name);
@@ -75,33 +106,61 @@ const CategoriesPage = () => {
         await axiosInstance.put(`/products/categories/${editingId}/`, form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSnackbar({ open: true, message: 'Category updated successfully', severity: 'success' });
       } else {
         await axiosInstance.post("/products/categories/", form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSnackbar({ open: true, message: 'Category added successfully', severity: 'success' });
       }
 
       setFormData({ name: "", description: "", image: null });
       setEditingId(null);
+      setImagePreview(null);
+      setOpenDialog(false);
       fetchCategories();
     } catch (error) {
       console.error("Error saving category", error);
+      setSnackbar({ open: true, message: 'Failed to save category', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEdit = (cat) => {
     setFormData({ name: cat.name, description: cat.description || "", image: null });
+    setImagePreview(cat.image);
     setEditingId(cat.id);
+    setOpenDialog(true);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this category?")) return;
+    setLoading(true);
     try {
       await axiosInstance.delete(`/products/categories/${id}/`);
+      setSnackbar({ open: true, message: 'Category deleted successfully', severity: 'success' });
       fetchCategories();
     } catch (error) {
       console.error("Error deleting category", error);
+      setSnackbar({ open: true, message: 'Failed to delete category', severity: 'error' });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleOpenDialog = () => {
+    setFormData({ name: "", description: "", image: null });
+    setImagePreview(null);
+    setEditingId(null);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setFormData({ name: "", description: "", image: null });
+    setImagePreview(null);
+    setEditingId(null);
   };
 
   if (!hasPermission) {
@@ -113,88 +172,321 @@ const CategoriesPage = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Manage Categories
-      </Typography>
+    <Box sx={{ backgroundColor: '#f8f9fa', minHeight: '100vh', pb: 5 }}>
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          py: 5,
+          mb: 4,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'white' }}>
+              <IconButton onClick={() => navigate('/shopadmin')} sx={{ color: 'white' }}>
+                <ArrowBack />
+              </IconButton>
+              <CategoryIcon sx={{ fontSize: 50 }} />
+              <Box>
+                <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                  Categories
+                </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                  Manage product categories
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleOpenDialog}
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(10px)',
+                fontWeight: 700,
+                textTransform: 'none',
+                py: 1.5,
+                px: 3,
+                borderRadius: 2,
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                },
+              }}
+            >
+              Add Category
+            </Button>
+          </Box>
+        </Container>
+      </Box>
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  label="Category Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
+      <Container maxWidth="lg">
+        {loading && categories.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress size={60} thickness={4} sx={{ color: '#667eea' }} />
+          </Box>
+        ) : categories.length === 0 ? (
+          <Paper
+            sx={{
+              p: 8,
+              textAlign: 'center',
+              borderRadius: 3,
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+            }}
+          >
+            <CategoryIcon sx={{ fontSize: 100, color: '#e0e0e0', mb: 3 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
+              No Categories Yet
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Start by adding your first category
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleOpenDialog}
+              sx={{
+                backgroundColor: '#667eea',
+                fontWeight: 700,
+                textTransform: 'none',
+                py: 1.5,
+                px: 4,
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                '&:hover': {
+                  backgroundColor: '#5568d3',
+                  boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                },
+              }}
+            >
+              Add Category
+            </Button>
+          </Paper>
+        ) : (
+          <Grid container spacing={3}>
+            {categories.map((cat) => (
+              <Grid item xs={12} sm={6} md={4} key={cat.id}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    borderRadius: 3,
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: 180,
+                      backgroundColor: '#f0f3ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {cat.image ? (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      <ImageIcon sx={{ fontSize: 80, color: '#667eea', opacity: 0.3 }} />
+                    )}
+                  </Box>
+                  <CardContent sx={{ p: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
+                      {cat.name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        mb: 2,
+                        height: 40,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {cat.description || 'No description available'}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <IconButton
+                        onClick={() => handleEdit(cat)}
+                        sx={{
+                          backgroundColor: '#f0f3ff',
+                          color: '#667eea',
+                          '&:hover': {
+                            backgroundColor: '#667eea',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <Edit />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDelete(cat.id)}
+                        sx={{
+                          backgroundColor: '#ffebee',
+                          color: '#f44336',
+                          '&:hover': {
+                            backgroundColor: '#f44336',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Stack>
+                  </CardContent>
+                </Card>
               </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} md={2}>
-                <Button variant="contained" component="label" fullWidth>
-                  Upload Image
-                  <input type="file" hidden name="image" onChange={handleChange} />
-                </Button>
-              </Grid>
-              <Grid item xs={12}>
-                <Button type="submit" variant="contained" color="primary">
-                  {editingId ? "Update Category" : "Add Category"}
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
-        </CardContent>
-      </Card>
+            ))}
+          </Grid>
+        )}
+      </Container>
 
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Image</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {categories.map((cat) => (
-            <TableRow key={cat.id}>
-              <TableCell>{cat.name}</TableCell>
-              <TableCell>{cat.description}</TableCell>
-              <TableCell>
-                {cat.image ? (
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    width={60}
-                    style={{ borderRadius: "8px" }}
-                  />
-                ) : (
-                  "No Image"
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.5rem' }}>
+          {editingId ? 'Edit Category' : 'Add New Category'}
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label="Category Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#667eea',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                multiline
+                rows={3}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '&:hover fieldset': {
+                      borderColor: '#667eea',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    },
+                  },
+                }}
+              />
+              <Box>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  fullWidth
+                  startIcon={<CloudUpload />}
+                  sx={{
+                    borderColor: '#667eea',
+                    color: '#667eea',
+                    py: 1.5,
+                    '&:hover': {
+                      borderColor: '#5568d3',
+                      backgroundColor: '#f0f3ff',
+                    },
+                  }}
+                >
+                  {formData.image ? formData.image.name : 'Upload Image'}
+                  <input type="file" hidden name="image" onChange={handleChange} accept="image/*" />
+                </Button>
+                {imagePreview && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: 'flex',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 200,
+                        borderRadius: 8,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                  </Box>
                 )}
-              </TableCell>
-              <TableCell>
-                <IconButton onClick={() => handleEdit(cat)}>
-                  <Edit />
-                </IconButton>
-                <IconButton onClick={() => handleDelete(cat.id)}>
-                  <Delete />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </Box>
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3 }}>
+            <Button
+              onClick={handleCloseDialog}
+              sx={{
+                color: '#757575',
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{
+                backgroundColor: '#667eea',
+                fontWeight: 700,
+                textTransform: 'none',
+                px: 4,
+                '&:hover': {
+                  backgroundColor: '#5568d3',
+                },
+              }}
+            >
+              {loading ? 'Saving...' : editingId ? 'Update' : 'Add'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ borderRadius: 2 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
