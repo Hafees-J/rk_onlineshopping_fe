@@ -130,15 +130,15 @@ export default function ShopItemPage() {
       );
       const shopItemsWithFullUrl = (res.data || []).map((shopItem) => ({
         ...shopItem,
-        display_image: shopItem.display_image && !shopItem.display_image.startsWith("http")
+        imageUrl: shopItem.image?.startsWith("http")
+          ? shopItem.image
+          : shopItem.display_image?.startsWith("http")
+          ? shopItem.display_image
+          : shopItem.image
+          ? `${axiosInstance.defaults.baseURL}${shopItem.image}`
+          : shopItem.display_image
           ? `${axiosInstance.defaults.baseURL}${shopItem.display_image}`
-          : shopItem.display_image,
-        item: {
-          ...shopItem.item,
-          image: shopItem.item?.image && !shopItem.item.image.startsWith("http")
-            ? `${axiosInstance.defaults.baseURL}${shopItem.item.image}`
-            : shopItem.item?.image,
-        },
+          : null,
       }));
       setShopItems(shopItemsWithFullUrl);
       setFilteredShopItems(shopItemsWithFullUrl);
@@ -507,9 +507,9 @@ export default function ShopItemPage() {
                         position: 'relative',
                       }}
                     >
-                      {shopItem.display_image ? (
+                      {shopItem.imageUrl ? (
                         <img
-                          src={shopItem.display_image}
+                          src={shopItem.imageUrl}
                           alt={shopItem.item_name || shopItem.item?.name}
                           style={{
                             width: '100%',
