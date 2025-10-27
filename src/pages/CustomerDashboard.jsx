@@ -22,9 +22,11 @@ import {
   Container,
   Chip,
   Paper,
+  TextField,
+  IconButton,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { LocalOffer, Store, RestaurantMenu, Add } from "@mui/icons-material";
+import { LocalOffer, Store, RestaurantMenu, Add, Search, Clear } from "@mui/icons-material";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -42,6 +44,8 @@ export default function CustomerDashboard() {
   const [shops, setShops] = useState([]);
   const [selectedShop, setSelectedShop] = useState(null);
   const [shopItems, setShopItems] = useState([]);
+  const [filteredShopItems, setFilteredShopItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loadingSubcategories, setLoadingSubcategories] = useState(true);
   const [loadingShops, setLoadingShops] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
@@ -113,6 +117,8 @@ export default function CustomerDashboard() {
   const handleShopClick = async (shopId) => {
     setSelectedShop(shopId);
     setShopItems([]);
+    setFilteredShopItems([]);
+    setSearchQuery('');
     setLoadingItems(true);
     setError("");
 
@@ -121,11 +127,29 @@ export default function CustomerDashboard() {
         headers: { Authorization: `Bearer ${auth.access}` },
       });
       setShopItems(res.data);
+      setFilteredShopItems(res.data);
     } catch (err) {
       setError("Failed to load shop items");
     } finally {
       setLoadingItems(false);
     }
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredShopItems(shopItems);
+    } else {
+      const filtered = shopItems.filter((item) =>
+        item.item_name.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredShopItems(filtered);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setFilteredShopItems(shopItems);
   };
 
   // Add to cart
@@ -460,6 +484,55 @@ export default function CustomerDashboard() {
               Add your favorite items to cart
             </Typography>
 
+            {shopItems.length > 0 && (
+              <Paper
+                sx={{
+                  p: 2,
+                  mb: 3,
+                  borderRadius: 3,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                }}
+              >
+                <TextField
+                  fullWidth
+                  placeholder="Search menu items..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <Search sx={{ color: '#d32f2f', mr: 1 }} />
+                    ),
+                    endAdornment: searchQuery && (
+                      <IconButton
+                        onClick={handleClearSearch}
+                        size="small"
+                        sx={{
+                          color: '#757575',
+                          '&:hover': {
+                            backgroundColor: '#fff5f5',
+                            color: '#d32f2f',
+                          },
+                        }}
+                      >
+                        <Clear />
+                      </IconButton>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&:hover fieldset': {
+                        borderColor: '#d32f2f',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#d32f2f',
+                      },
+                    },
+                  }}
+                />
+              </Paper>
+            )}
+
             {loadingItems ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
                 <CircularProgress size={50} thickness={4} sx={{ color: '#d32f2f' }} />
@@ -468,9 +541,53 @@ export default function CustomerDashboard() {
               <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
                 <Typography color="text.secondary">No items available at the moment</Typography>
               </Paper>
+            ) : filteredShopItems.length === 0 ? (
+              <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
+                <Search sx={{ fontSize: 60, color: '#e0e0e0', mb: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#2c3e50' }}>
+                  No Results Found
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  No items match "{searchQuery}"
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={handleClearSearch}
+                  sx={{
+                    borderColor: '#d32f2f',
+                    color: '#d32f2f',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#b71c1c',
+                      backgroundColor: '#fff5f5',
+                    },
+                  }}
+                >
+                  Clear Search
+                </Button>
+              </Paper>
             ) : (
-              <Grid container spacing={3}>
-                {shopItems.map((item) => (
+              <>
+                {searchQuery && (
+                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {filteredShopItems.length} of {shopItems.length} items
+                    </Typography>
+                    <Chip
+                      label={`Filtered by: "${searchQuery}"`}
+                      onDelete={handleClearSearch}
+                      size="small"
+                      sx={{
+                        backgroundColor: '#fff5f5',
+                        color: '#d32f2f',
+                        fontWeight: 600,
+                      }}
+                    />
+                  </Box>
+                )}
+                <Grid container spacing={3}>
+                  {filteredShopItems.map((item) => (
                   <Grid item key={item.id} xs={12} sm={6} md={4} lg={3}>
                     <Card
                       sx={{
@@ -596,8 +713,9 @@ export default function CustomerDashboard() {
                       </CardActions>
                     </Card>
                   </Grid>
-                ))}
-              </Grid>
+                  ))}
+                </Grid>
+              </>
             )}
           </Box>
         )}
