@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("shop_id");
     localStorage.removeItem("mobile_number");
     setAuth(null);
-    window.location.href = "/login";
+    window.location.href = "/customer-dashboard";
   };
 
   return (

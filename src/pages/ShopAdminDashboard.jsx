@@ -21,6 +21,7 @@ import {
   QrCode,
   Store,
   AccountTree,
+  ReceiptLong,
   ExitToApp,
   AdminPanelSettings,
   ArrowForward,
@@ -83,6 +84,14 @@ export default function ShopAdminDashboard() {
       color: '#fa709a',
       bgColor: '#fff5f8',
     },
+    {
+      title: 'Order Management',
+      description: 'Manage orders',
+      icon: <ReceiptLong sx={{ fontSize: 40 }} />,
+      path: '/orders',
+      color: '#746f70ff',
+      bgColor: '#fff5f8',
+    },
   ];
 
   return (
@@ -129,25 +138,6 @@ export default function ShopAdminDashboard() {
                 </Box>
               </Box>
             </Box>
-            <Button
-              variant="contained"
-              endIcon={<ExitToApp />}
-              onClick={logout}
-              sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(10px)',
-                fontWeight: 700,
-                textTransform: 'none',
-                py: 1.5,
-                px: 3,
-                borderRadius: 2,
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.3)',
-                },
-              }}
-            >
-              Logout
-            </Button>
           </Box>
         </Container>
       </Box>

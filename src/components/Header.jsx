@@ -12,6 +12,12 @@ import {
   Container,
   Avatar,
   useScrollTrigger,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Slide
 } from "@mui/material";
 import {
   ShoppingCart,
@@ -23,6 +29,7 @@ import {
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import axiosInstance from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import arabiancafelogo from "../assets/arabiancafelogo.png"
 
 export default function Header() {
   const { auth, logout } = useAuth();
@@ -51,7 +58,16 @@ export default function Header() {
   }, [auth]);
 
   const dashboardLink =
-    auth?.role === "customer" ? "/customer-dashboard" : "/shopadmin-dashboard";
+    auth?.access
+      ? auth.role === "customer"
+        ? "/customer-dashboard"
+        : "/shopadmin-dashboard"
+      : "/customer-dashboard";
+
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
+
+  const handleLogoutClick = () => setOpenLogoutDialog(true);
+  const handleCloseDialog = () => setOpenLogoutDialog(false);
 
   return (
     <AppBar
@@ -90,7 +106,7 @@ export default function Header() {
             }}
           >
             <Avatar
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvSFTCAH5WNk_bRzoSauquIVuFQxXP-zRe6Q&s"
+              src={arabiancafelogo}
               alt="Rajakumari Logo"
               sx={{
                 width: 48,
@@ -114,7 +130,7 @@ export default function Header() {
             </Typography>
           </Box>
 
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={3}>
             <Button
               component={Link}
               to={dashboardLink}
@@ -137,89 +153,165 @@ export default function Header() {
               Dashboard
             </Button>
 
-            <Tooltip title="Profile" arrow>
-              <IconButton
-                component={Link}
-                to="/profile"
-                sx={{
-                  color: 'text.primary',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-              >
-                <AccountCircle sx={{ fontSize: 28 }} />
-              </IconButton>
-            </Tooltip>
+            {auth?.access && (
+            <Button
+              component={Link}
+              to="/profile"
+              startIcon={<AccountCircle />}
+              sx={{
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Profile
+            </Button>
+            )}
 
             {auth?.role === "customer" && (
-              <Tooltip title="Shopping Cart" arrow>
-                <IconButton
+                <Button
                   component={Link}
                   to="/cart"
+                  startIcon={
+                    <Badge
+                      badgeContent={cartCount}
+                      color="error"
+                      overlap="circular"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                          minWidth: 20,
+                          height: 20,
+                        },
+                      }}
+                    >
+                      <ShoppingCart sx={{ fontSize: 24 }} />
+                    </Badge>
+                  }
                   sx={{
                     color: 'text.primary',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
+                    px: 2,
+                    py: 1,
+                    borderRadius: 2,
                     transition: 'all 0.2s ease',
                     '&:hover': {
                       backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                      transform: 'translateY(-1px)',
+                    },
+                  }}
+                >
+                  Cart
+                </Button>
+            )}
+
+            {auth?.access && (
+              <Button
+              component={Link}
+              to="/order-history"
+              startIcon={<ReceiptLongIcon />}
+              sx={{
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Order History
+            </Button>
+            )}
+
+          {!auth?.access && (
+            <Button
+              component={Link}
+              to="/login"
+              startIcon={<AccountCircle />}
+              sx={{
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'translateY(-1px)',
+                },
+              }}
+            >
+              Sign In
+            </Button>
+          )}
+
+          {auth?.access && (
+            <>
+              <Tooltip title="Logout" arrow>
+                <IconButton
+                  onClick={handleLogoutClick}
+                  sx={{
+                    color: '#d32f2f',
+                    ml: 1,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'rgba(211, 47, 47, 0.08)',
                       transform: 'translateY(-2px)',
                     },
                   }}
                 >
-                  <Badge
-                    badgeContent={cartCount}
-                    color="error"
-                    overlap="circular"
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
-                        minWidth: 20,
-                        height: 20,
-                      },
-                    }}
-                  >
-                    <ShoppingCart sx={{ fontSize: 28 }} />
-                  </Badge>
+                  <Logout sx={{ fontSize: 28 }} />
                 </IconButton>
               </Tooltip>
-            )}
 
-            <Tooltip title="Order History" arrow>
-              <IconButton
-                component={Link}
-                to="/order-history"
-                sx={{
-                  color: 'text.primary',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-              >
-                <ReceiptLongIcon sx={{ fontSize: 28 }} />
-              </IconButton>
-            </Tooltip>
+              <Dialog open={openLogoutDialog} onClose={handleCloseDialog}>
+                <DialogTitle>Confirm Logout</DialogTitle>
 
-            <Tooltip title="Logout" arrow>
-              <IconButton
-                onClick={logout}
-                sx={{
-                  color: '#d32f2f',
-                  ml: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(211, 47, 47, 0.08)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-              >
-                <Logout sx={{ fontSize: 28 }} />
-              </IconButton>
-            </Tooltip>
+                <DialogContent>
+                  <Typography>
+                    Are you sure you want to logout?
+                  </Typography>
+                </DialogContent>
+
+                <DialogActions>
+                  <Button onClick={handleCloseDialog}>
+                    Cancel
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      logout();
+                      handleCloseDialog();
+                    }}
+                    color="error"
+                    variant="contained"
+                  >
+                    Logout
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            </>
+          )}
           </Box>
         </Toolbar>
       </Container>

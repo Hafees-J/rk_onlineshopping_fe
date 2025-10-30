@@ -13,6 +13,7 @@ import HSNPage from "./pages/admin/HsnPage";
 import ItemsPage from "./pages/admin/ItemsPage";
 import ShopItemPage from "./pages/admin/ShopItemPage";
 import ShopItemOfferPage from "./pages/admin/ShopItemOfferPage";
+import OrderManagementPage from "./pages/admin/OrderManagementPage";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -32,7 +33,7 @@ export default function App() {
       <Header />
       <Routes>
         {/* Default route */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/customer-dashboard" replace />} />
 
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
@@ -96,11 +97,17 @@ export default function App() {
           }
         />
         <Route
-          path="/customer-dashboard"
+          path="/orders"
           element={
             <PrivateRoute>
-              <CustomerDashboard />
+              <OrderManagementPage />
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/customer-dashboard"
+          element={
+              <CustomerDashboard />
           }
         />
         <Route

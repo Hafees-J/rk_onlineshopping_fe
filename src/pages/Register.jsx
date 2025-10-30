@@ -84,7 +84,7 @@ export default function Register() {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #ffffffff 0%, #b92222ff 100%)',
         display: 'flex',
         alignItems: 'center',
         py: 5,

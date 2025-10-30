@@ -252,7 +252,7 @@ const ItemsPage = () => {
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'white' }}>
-              <IconButton onClick={() => navigate('/shopadmin')} sx={{ color: 'white' }}>
+              <IconButton onClick={() => navigate('/shopadmin-dashboard')} sx={{ color: 'white' }}>
                 <ArrowBack />
               </IconButton>
               <Inventory sx={{ fontSize: 50 }} />

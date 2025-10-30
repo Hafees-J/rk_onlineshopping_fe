@@ -67,11 +67,9 @@ export default function CustomerDashboard() {
   // Fetch available subcategories
   useEffect(() => {
     const fetchSubcategories = async () => {
-      if (!auth?.access) return;
       setLoadingSubcategories(true);
       try {
         const res = await axiosInstance.get("/products/subcategories/available/", {
-          headers: { Authorization: `Bearer ${auth.access}` },
         });
         const uniqueSubs = [];
         const seen = new Set();
@@ -102,8 +100,7 @@ export default function CustomerDashboard() {
 
     try {
       const res = await axiosInstance.get(
-        `/products/shops/by-subcategory/${subcategoryId}/`,
-        { headers: { Authorization: `Bearer ${auth.access}` } }
+        `/products/shops/by-subcategory/${subcategoryId}/`
       );
       setShops(res.data);
     } catch (err) {
@@ -123,9 +120,8 @@ export default function CustomerDashboard() {
     setError("");
 
     try {
-      const res = await axiosInstance.get(`/products/shops/${shopId}/items/`, {
-        headers: { Authorization: `Bearer ${auth.access}` },
-      });
+      const res = await axiosInstance.get(`/products/shops/${shopId}/items/`
+      );
       setShopItems(res.data);
       setFilteredShopItems(res.data);
     } catch (err) {
@@ -179,8 +175,8 @@ export default function CustomerDashboard() {
       } else {
         setSnackbar({
           open: true,
-          message: "Failed to add item to cart",
-          severity: "error",
+          message: "Failed to add item to cart, Please Sign In !!",
+          severity: "info",
         });
       }
     } finally {
@@ -225,7 +221,7 @@ export default function CustomerDashboard() {
         sx={{
           width: '100%',
           height: { xs: 200, sm: 280, md: 350 },
-          backgroundImage: 'url(https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920)',
+          backgroundImage: 'url(https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           position: 'relative',

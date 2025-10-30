@@ -191,7 +191,7 @@ const handlePlaceOrder = async () => {
     <Box sx={{ backgroundColor: '#f8f9fa', minHeight: '100vh', pb: 5 }}>
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #c5455aff 0%, #b92222ff 100%)',
           py: 4,
           mb: 4,
         }}
